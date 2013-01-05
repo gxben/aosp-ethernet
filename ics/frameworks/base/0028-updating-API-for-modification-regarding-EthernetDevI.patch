@@ -1,0 +1,41 @@
+From 03630a0c6599cac0e89e2076a850aad52a556950 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 3 Aug 2012 10:53:35 +0200
+Subject: [PATCH 28/50] updating API for modification regarding EthernetDevInfo (new MAC address field)
+
+---
+ api/current.txt |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/api/current.txt b/api/current.txt
+index 36f76a2..b6bd229 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -12000,12 +12000,14 @@ package android.net.ethernet {
+     method public java.lang.String getDnsAddr();
+     method public java.lang.String getIfName();
+     method public java.lang.String getIpAddress();
++    method public java.lang.String getMacAddress();
+     method public java.lang.String getNetMask();
+     method public java.lang.String getRouteAddr();
+     method public boolean setConnectMode(java.lang.String);
+     method public void setDnsAddr(java.lang.String);
+     method public void setIfName(java.lang.String);
+     method public void setIpAddress(java.lang.String);
++    method public void setMacAddress(java.lang.String);
+     method public void setNetMask(java.lang.String);
+     method public void setRouteAddr(java.lang.String);
+     method public void writeToParcel(android.os.Parcel, int);
+@@ -12266,8 +12268,8 @@ package android.net.sip {
+     method public static boolean isIncomingCallIntent(android.content.Intent);
+     method public boolean isOpened(java.lang.String) throws android.net.sip.SipException;
+     method public boolean isRegistered(java.lang.String) throws android.net.sip.SipException;
+-    method public static boolean isSipWifiOnly(android.content.Context);
+     method public static boolean isSipEthernet(android.content.Context);
++    method public static boolean isSipWifiOnly(android.content.Context);
+     method public static boolean isVoipSupported(android.content.Context);
+     method public android.net.sip.SipAudioCall makeAudioCall(android.net.sip.SipProfile, android.net.sip.SipProfile, android.net.sip.SipAudioCall.Listener, int) throws android.net.sip.SipException;
+     method public android.net.sip.SipAudioCall makeAudioCall(java.lang.String, java.lang.String, android.net.sip.SipAudioCall.Listener, int) throws android.net.sip.SipException;
+-- 
+1.7.4.1
+

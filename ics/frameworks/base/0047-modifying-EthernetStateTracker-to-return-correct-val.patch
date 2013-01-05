@@ -1,0 +1,64 @@
+From 3f31ac22502070468be3d6a1330bd58acb242187 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Mon, 3 Sep 2012 11:03:51 +0200
+Subject: [PATCH 47/50] modifying EthernetStateTracker to return correct values for eth0 statistics
+
+---
+ .../android/net/ethernet/EthernetStateTracker.java |   13 +++++++++++--
+ 1 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/ethernet/java/android/net/ethernet/EthernetStateTracker.java b/ethernet/java/android/net/ethernet/EthernetStateTracker.java
+index 1e57a76..71d1abd 100644
+--- a/ethernet/java/android/net/ethernet/EthernetStateTracker.java
++++ b/ethernet/java/android/net/ethernet/EthernetStateTracker.java
+@@ -79,6 +79,8 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+     private EthernetManager mEM;
+     private boolean mServiceStarted;
+     private NetworkInfo mNetworkInfo;
++    private LinkProperties mLinkProperties;
++    private LinkCapabilities mLinkCapabilities;
+ 
+     private boolean mStackConnected;
+     private boolean mHWConnected;
+@@ -173,6 +175,8 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+             mDhcpInfo.addRoute(defaultRoute);
+             mDhcpInfo.dns1 = info.getDnsAddr();
+             mDhcpInfo.dns2 = "0.0.0.0";
++            mLinkProperties = mDhcpInfo.makeLinkProperties();
++            mLinkProperties.setInterfaceName("eth0");
+             infoDhcp = mDhcpInfo.makeDhcpInfo();
+ 
+             if (localLOGV) Slog.i(TAG, "set ip manually " + mDhcpInfo.toString());
+@@ -314,7 +318,10 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+     }
+ 
+     private void postNotification(int event) {
+-        Message msg = mCsHandler.obtainMessage(EVENT_STATE_CHANGED, new NetworkInfo(mNetworkInfo));
++        Message msg = mCsHandler.obtainMessage(EVENT_CONFIGURATION_CHANGED, mNetworkInfo);
++        msg.sendToTarget();
++
++        msg = mCsHandler.obtainMessage(EVENT_STATE_CHANGED, mNetworkInfo);
+         msg.sendToTarget();
+     }
+ 
+@@ -404,6 +411,8 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+                                  event = EVENT_INTERFACE_CONFIGURATION_FAILED;
+                                  Slog.e(TAG, "DhcpHandler: DHCP request failed: " + NetworkUtils.getDhcpError());
+                              }
++                             mLinkProperties = mDhcpInfo.makeLinkProperties();
++                             mLinkProperties.setInterfaceName("eth0");
+                              mTrackerTarget.sendEmptyMessage(event);
+                          } else {
+                              mInterfaceStopped = false;
+@@ -494,7 +503,7 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+      * Fetch LinkProperties for the network
+      */
+     public LinkProperties getLinkProperties() {
+-        return new LinkProperties();
++        return new LinkProperties(mLinkProperties);
+     }
+ 
+     /**
+-- 
+1.7.4.1
+

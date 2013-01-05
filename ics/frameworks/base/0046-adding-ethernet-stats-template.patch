@@ -1,0 +1,21 @@
+From 0522d6fd60121294c5074ee3a79bf8b938bad517 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Mon, 3 Sep 2012 11:03:15 +0200
+Subject: [PATCH 46/50] adding ethernet stats template
+
+---
+ .../java/com/android/server/EventLogTags.logtags   |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/services/java/com/android/server/EventLogTags.logtags b/services/java/com/android/server/EventLogTags.logtags
+index 4dad209..de00209 100644
+--- a/services/java/com/android/server/EventLogTags.logtags
++++ b/services/java/com/android/server/EventLogTags.logtags
+@@ -144,3 +144,4 @@ option java_package com.android.server
+ # ---------------------------
+ 51100 netstats_mobile_sample (dev_rx_bytes|2|2),(dev_tx_bytes|2|2),(dev_rx_pkts|2|1),(dev_tx_pkts|2|1),(xt_rx_bytes|2|2),(xt_tx_bytes|2|2),(xt_rx_pkts|2|1),(xt_tx_pkts|2|1),(uid_rx_bytes|2|2),(uid_tx_bytes|2|2),(uid_rx_pkts|2|1),(uid_tx_pkts|2|1),(trusted_time|2|3),(dev_history_start|2|3)
+ 51101 netstats_wifi_sample (dev_rx_bytes|2|2),(dev_tx_bytes|2|2),(dev_rx_pkts|2|1),(dev_tx_pkts|2|1),(xt_rx_bytes|2|2),(xt_tx_bytes|2|2),(xt_rx_pkts|2|1),(xt_tx_pkts|2|1),(uid_rx_bytes|2|2),(uid_tx_bytes|2|2),(uid_rx_pkts|2|1),(uid_tx_pkts|2|1),(trusted_time|2|3),(dev_history_start|2|3)
++51102 netstats_ethernet_sample (dev_rx_bytes|2|2),(dev_tx_bytes|2|2),(dev_rx_pkts|2|1),(dev_tx_pkts|2|1),(xt_rx_bytes|2|2),(xt_tx_bytes|2|2),(xt_rx_pkts|2|1),(xt_tx_pkts|2|1),(uid_rx_bytes|2|2),(uid_tx_bytes|2|2),(uid_rx_pkts|2|1),(uid_tx_pkts|2|1),(trusted_time|2|3),(dev_history_start|2|3)
+-- 
+1.7.4.1
+

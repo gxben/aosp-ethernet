@@ -1,0 +1,36 @@
+From c876dbadc8d91f4d66333ed4a48b80ef552fa640 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 24 Apr 2012 13:32:32 +0200
+Subject: [PATCH] Adding Ethernet support in DownloadProvider
+
+---
+ .../android/providers/downloads/DownloadInfo.java  |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/src/com/android/providers/downloads/DownloadInfo.java b/src/com/android/providers/downloads/DownloadInfo.java
+index 304d70f..df5e14c 100644
+--- a/src/com/android/providers/downloads/DownloadInfo.java
++++ b/src/com/android/providers/downloads/DownloadInfo.java
+@@ -418,6 +418,9 @@ public class DownloadInfo {
+             case ConnectivityManager.TYPE_WIFI:
+                 return DownloadManager.Request.NETWORK_WIFI;
+ 
++            case ConnectivityManager.TYPE_ETHERNET:
++                return DownloadManager.Request.NETWORK_ETHERNET;
++
+             default:
+                 return 0;
+         }
+@@ -434,6 +437,9 @@ public class DownloadInfo {
+         if (networkType == ConnectivityManager.TYPE_WIFI) {
+             return NETWORK_OK; // anything goes over wifi
+         }
++        if (networkType == ConnectivityManager.TYPE_ETHERNET) {
++            return NETWORK_OK; // anything goes over wifi
++        }
+         Long maxBytesOverMobile = mSystemFacade.getMaxBytesOverMobile();
+         if (maxBytesOverMobile != null && mTotalBytes > maxBytesOverMobile) {
+             return NETWORK_UNUSABLE_DUE_TO_SIZE;
+-- 
+1.7.4.1
+

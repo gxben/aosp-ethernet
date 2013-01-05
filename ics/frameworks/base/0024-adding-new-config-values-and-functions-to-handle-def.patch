@@ -1,0 +1,49 @@
+From a3bace00f235ec7351069a4231a30b8fe7ad6b6e Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 27 Jul 2012 18:16:52 +0200
+Subject: [PATCH 24/50] adding new config values and functions to handle default proxy configuration
+
+---
+ core/res/res/values/config.xml                     |    6 ++++++
+ .../com/android/server/ConnectivityService.java    |    8 ++++++++
+ 2 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 6aeeeaa..986ff55 100755
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -596,6 +596,12 @@
+     <!-- IP address of the dns server to use if nobody else suggests one -->
+     <string name="config_default_dns_server" translatable="false">8.8.8.8</string>
+ 
++    <!-- Proxy default configuration -->
++    <string name="config_default_proxy_host" translatable="false">8.8.8.8</string>
++
++    <integer name="config_default_proxy_port" translatable="false">8080</integer>
++
++
+     <!-- The default character set for GsmAlphabet -->
+     <!-- Empty string means MBCS is not considered -->
+     <string name="gsm_alphabet_default_charset" translatable="false"></string>
+diff --git a/services/java/com/android/server/ConnectivityService.java b/services/java/com/android/server/ConnectivityService.java
+index d69893f..bcfb774 100644
+--- a/services/java/com/android/server/ConnectivityService.java
++++ b/services/java/com/android/server/ConnectivityService.java
+@@ -356,6 +356,14 @@ public class ConnectivityService extends IConnectivityManager.Stub {
+             loge("Error setting defaultDns using " + dns);
+         }
+ 
++	//default proxy implementation
++	String proxyHost = context.getResources().getString(
++                    com.android.internal.R.string.config_default_proxy_host);
++	int proxyPort = context.getResources().getInteger(
++                    com.android.internal.R.integer.config_default_proxy_port);
++
++        mGlobalProxy = new ProxyProperties(proxyHost, proxyPort, null);
++
+         mContext = checkNotNull(context, "missing Context");
+         mNetd = checkNotNull(netd, "missing INetworkManagementService");
+         mPolicyManager = checkNotNull(policyManager, "missing INetworkPolicyManager");
+-- 
+1.7.4.1
+

@@ -1,0 +1,57 @@
+From 5af8c1edd1515611ecd8ba94adcb6ba72545ff30 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 7 Aug 2012 14:37:05 +0200
+Subject: [PATCH 37/50] Modifying NtpTrustedTime to handle NTP server field setting
+
+---
+ core/java/android/util/NtpTrustedTime.java |   15 ++++++++++-----
+ 1 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/core/java/android/util/NtpTrustedTime.java b/core/java/android/util/NtpTrustedTime.java
+index 2179ff3..fc19908 100644
+--- a/core/java/android/util/NtpTrustedTime.java
++++ b/core/java/android/util/NtpTrustedTime.java
+@@ -35,7 +35,7 @@ public class NtpTrustedTime implements TrustedTime {
+ 
+     private static NtpTrustedTime sSingleton;
+ 
+-    private final String mServer;
++    private String mServer;
+     private final long mTimeout;
+ 
+     private boolean mHasCache;
+@@ -54,17 +54,17 @@ public class NtpTrustedTime implements TrustedTime {
+             final Resources res = context.getResources();
+             final ContentResolver resolver = context.getContentResolver();
+ 
+-            final String defaultServer = res.getString(
+-                    com.android.internal.R.string.config_ntpServer);
++            String defaultServer = Settings.System.getString(
++                    resolver, Settings.System.NTP_SERVER);
+             final long defaultTimeout = res.getInteger(
+                     com.android.internal.R.integer.config_ntpTimeout);
+ 
+-            final String secureServer = Settings.Secure.getString(
++            String secureServer = Settings.Secure.getString(
+                     resolver, Settings.Secure.NTP_SERVER);
+             final long timeout = Settings.Secure.getLong(
+                     resolver, Settings.Secure.NTP_TIMEOUT, defaultTimeout);
+ 
+-            final String server = secureServer != null ? secureServer : defaultServer;
++            String server = secureServer != null ? secureServer : defaultServer;
+             sSingleton = new NtpTrustedTime(server, timeout);
+         }
+ 
+@@ -134,4 +134,9 @@ public class NtpTrustedTime implements TrustedTime {
+     public long getCachedNtpTimeReference() {
+         return mCachedNtpElapsedRealtime;
+     }
++
++    public void refreshServer(String ntpServer) {
++        if (!ntpServer.equals(mServer))
++            mServer = ntpServer;
++    }
+ }
+-- 
+1.7.4.1
+

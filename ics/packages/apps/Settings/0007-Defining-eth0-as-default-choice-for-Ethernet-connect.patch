@@ -1,0 +1,31 @@
+From bafe813b6d8ef870e50c6ff603a2c08ddbda64af Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 12 Jul 2012 13:37:47 +0200
+Subject: [PATCH 07/19] Defining eth0 as default choice for Ethernet connection
+
+---
+ .../settings/ethernet/EthernetConfigDialog.java    |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/src/com/android/settings/ethernet/EthernetConfigDialog.java b/src/com/android/settings/ethernet/EthernetConfigDialog.java
+index 68b4b2e..7c1edd7 100644
+--- a/src/com/android/settings/ethernet/EthernetConfigDialog.java
++++ b/src/com/android/settings/ethernet/EthernetConfigDialog.java
+@@ -142,6 +142,14 @@ public class EthernetConfigDialog extends AlertDialog implements
+                     mMask.setEnabled(true);
+                 }
+             }
++	    else {
++                for (int i = 0 ; i < Devs.length; i++) {
++                    if (Devs[i].equals("eth0")) {
++                        mDevList.setSelection(i);
++                        break;
++                    }
++                }
++            }
+         }
+         return 0;
+     }
+-- 
+1.7.4.1
+

@@ -1,0 +1,32 @@
+From 125f8576b0fc0a16698dd4e3f0b310638f3b34cf Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 3 Jul 2012 16:44:35 +0200
+Subject: [PATCH 2/2] Adding Ethernet API in classpath file for Eclipse IDE
+
+---
+ ide/eclipse/.classpath |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/ide/eclipse/.classpath b/ide/eclipse/.classpath
+index f6bcc4c..820aed4 100644
+--- a/ide/eclipse/.classpath
++++ b/ide/eclipse/.classpath
+@@ -37,6 +37,7 @@
+ 	<classpathentry kind="src" path="frameworks/base/cmds/svc/src"/>
+ 	<classpathentry kind="src" path="frameworks/base/core/java"/>
+ 	<classpathentry kind="src" path="frameworks/base/drm/java"/>
++	<classpathentry kind="src" path="frameworks/base/ethernet/java"/>
+ 	<classpathentry kind="src" path="frameworks/base/graphics/java"/>
+ 	<classpathentry kind="src" path="frameworks/base/icu4j/java"/>
+ 	<classpathentry kind="src" path="frameworks/base/keystore/java"/>
+@@ -91,6 +92,7 @@
+ 	<classpathentry kind="src" path="out/target/common/obj/JAVA_LIBRARIES/android-common-carousel_intermediates/src/renderscript/src"/>
+ 	<classpathentry kind="src" path="out/target/common/obj/JAVA_LIBRARIES/com.android.emailcommon_intermediates/src/src"/>
+ 	<classpathentry kind="src" path="out/target/common/obj/JAVA_LIBRARIES/framework_intermediates/src/core/java"/>
++	<classpathentry kind="src" path="out/target/common/obj/JAVA_LIBRARIES/framework_intermediates/src/ethernet/java"/>
+ 	<classpathentry kind="src" path="out/target/common/obj/JAVA_LIBRARIES/framework_intermediates/src/keystore/java"/>
+ 	<classpathentry kind="src" path="out/target/common/obj/JAVA_LIBRARIES/framework_intermediates/src/location/java"/>
+ 	<classpathentry kind="src" path="out/target/common/obj/JAVA_LIBRARIES/framework_intermediates/src/media/java"/>
+-- 
+1.7.4.1
+

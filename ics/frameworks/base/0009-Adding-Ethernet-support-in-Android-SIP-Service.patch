@@ -1,0 +1,62 @@
+From 148eebeccd778f637ded2b6c681de29b07abc712 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 21 Jun 2012 17:16:34 +0200
+Subject: [PATCH 09/50] Adding Ethernet support in Android SIP Service
+
+---
+ voip/java/android/net/sip/SipManager.java        |    7 +++++++
+ voip/java/com/android/server/sip/SipService.java |    6 +++++-
+ 2 files changed, 12 insertions(+), 1 deletions(-)
+
+diff --git a/voip/java/android/net/sip/SipManager.java b/voip/java/android/net/sip/SipManager.java
+index 74c3672..5d8402f 100644
+--- a/voip/java/android/net/sip/SipManager.java
++++ b/voip/java/android/net/sip/SipManager.java
+@@ -155,6 +155,13 @@ public class SipManager {
+                 com.android.internal.R.bool.config_sip_wifi_only);
+     }
+ 
++    /**
++     * Returns true anyway for SIP on ethernet connection.
++     */
++    public static boolean isSipEthernet(Context context) {
++        return true;
++    }
++
+     private SipManager(Context context) {
+         mContext = context;
+         createSipService();
+diff --git a/voip/java/com/android/server/sip/SipService.java b/voip/java/com/android/server/sip/SipService.java
+index 38a683e..5e566fb 100644
+--- a/voip/java/com/android/server/sip/SipService.java
++++ b/voip/java/com/android/server/sip/SipService.java
+@@ -82,6 +82,7 @@ public final class SipService extends ISipService.Stub {
+     private SipWakeupTimer mTimer;
+     private WifiManager.WifiLock mWifiLock;
+     private boolean mSipOnWifiOnly;
++    private boolean mSipEthernet;
+ 
+     private IntervalMeasurementProcess mIntervalMeasurementProcess;
+ 
+@@ -122,6 +123,7 @@ public final class SipService extends ISipService.Stub {
+                 .createWifiLock(WifiManager.WIFI_MODE_FULL, TAG);
+         mWifiLock.setReferenceCounted(false);
+         mSipOnWifiOnly = SipManager.isSipWifiOnly(context);
++        mSipEthernet = SipManager.isSipEthernet(context);
+ 
+         mMyWakeLock = new SipWakeLock((PowerManager)
+                 context.getSystemService(Context.POWER_SERVICE));
+@@ -1154,7 +1156,9 @@ public final class SipService extends ISipService.Stub {
+         // Some devices limit SIP on Wi-Fi. In this case, if we are not on
+         // Wi-Fi, treat it as a DISCONNECTED event.
+         boolean connected = (info != null && info.isConnected() &&
+-                (!mSipOnWifiOnly || info.getType() == ConnectivityManager.TYPE_WIFI));
++		mSipEthernet && info.getType() == ConnectivityManager.TYPE_ETHERNET);
++                //(!mSipOnWifiOnly || info.getType() == ConnectivityManager.TYPE_WIFI));
++ 
+         String networkType = connected ? info.getTypeName() : "null";
+ 
+         // Ignore the event if the current active network is not changed.
+-- 
+1.7.4.1
+

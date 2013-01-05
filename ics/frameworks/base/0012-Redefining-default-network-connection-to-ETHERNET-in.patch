@@ -1,0 +1,39 @@
+From d14fe103cfbf481d1b07baf2f2fd26304ce8ada1 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 21 Jun 2012 17:19:46 +0200
+Subject: [PATCH 12/50] Redefining default network connection to ETHERNET in Android framework
+
+---
+ core/java/android/net/ConnectivityManager.java    |    2 +-
+ packages/SettingsProvider/res/values/defaults.xml |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/core/java/android/net/ConnectivityManager.java b/core/java/android/net/ConnectivityManager.java
+index 0052dd0..755e102 100644
+--- a/core/java/android/net/ConnectivityManager.java
++++ b/core/java/android/net/ConnectivityManager.java
+@@ -284,7 +284,7 @@ public class ConnectivityManager {
+     /** {@hide} */
+     public static final int MAX_NETWORK_TYPE = TYPE_WIFI_P2P;
+ 
+-    public static final int DEFAULT_NETWORK_PREFERENCE = TYPE_WIFI;
++    public static final int DEFAULT_NETWORK_PREFERENCE = TYPE_ETHERNET;
+ 
+     private final IConnectivityManager mService;
+ 
+diff --git a/packages/SettingsProvider/res/values/defaults.xml b/packages/SettingsProvider/res/values/defaults.xml
+index ffc4289..8cf0e7f 100644
+--- a/packages/SettingsProvider/res/values/defaults.xml
++++ b/packages/SettingsProvider/res/values/defaults.xml
+@@ -67,7 +67,7 @@
+     <string name="def_location_providers_allowed" translatable="false">gps</string>
+     <bool name="assisted_gps_enabled">true</bool>
+     <!--  0 == mobile, 1 == wifi. -->
+-    <integer name="def_network_preference">1</integer>
++    <integer name="def_network_preference">9</integer>
+     <bool name="def_usb_mass_storage_enabled">true</bool>
+     <bool name="def_wifi_on">false</bool>
+     <bool name="def_networks_available_notification_on">true</bool>
+-- 
+1.7.4.1
+

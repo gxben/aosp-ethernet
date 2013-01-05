@@ -1,0 +1,32 @@
+From 0c28a0008fef812f7247a88840342a79fabe8b26 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 3 Aug 2012 10:54:33 +0200
+Subject: [PATCH 29/50] Setting a net.http.proxy property to be able to retrieve proxy value for other libraries/applications
+
+---
+ .../com/android/server/ConnectivityService.java    |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/services/java/com/android/server/ConnectivityService.java b/services/java/com/android/server/ConnectivityService.java
+index bcfb774..0ae85ff 100644
+--- a/services/java/com/android/server/ConnectivityService.java
++++ b/services/java/com/android/server/ConnectivityService.java
+@@ -363,6 +363,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
+                     com.android.internal.R.integer.config_default_proxy_port);
+ 
+         mGlobalProxy = new ProxyProperties(proxyHost, proxyPort, null);
++        SystemProperties.set("net.http.proxy", proxyHost + ":" + proxyPort);
+ 
+         mContext = checkNotNull(context, "missing Context");
+         mNetd = checkNotNull(netd, "missing INetworkManagementService");
+@@ -2784,6 +2785,7 @@ private NetworkStateTracker makeWimaxStateTracker() {
+             Settings.Secure.putInt(res, Settings.Secure.GLOBAL_HTTP_PROXY_PORT, port);
+             Settings.Secure.putString(res, Settings.Secure.GLOBAL_HTTP_PROXY_EXCLUSION_LIST,
+                     exclList);
++            SystemProperties.set("net.http.proxy", host + ":" + port);
+         }
+ 
+         if (mGlobalProxy == null) {
+-- 
+1.7.4.1
+

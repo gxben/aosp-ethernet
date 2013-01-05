@@ -1,0 +1,117 @@
+From 4f5d1aeb259c7b823da4846e89518fbfbda9f64f Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 7 Aug 2012 14:43:47 +0200
+Subject: [PATCH 38/50] Modifying NetworkTimeUpdateService to handle new Setting for NTP Server
+
+---
+ .../android/server/NetworkTimeUpdateService.java   |   45 +++++++++++++++++--
+ 1 files changed, 40 insertions(+), 5 deletions(-)
+
+diff --git a/services/java/com/android/server/NetworkTimeUpdateService.java b/services/java/com/android/server/NetworkTimeUpdateService.java
+index f1725d6..73b4daf 100644
+--- a/services/java/com/android/server/NetworkTimeUpdateService.java
++++ b/services/java/com/android/server/NetworkTimeUpdateService.java
+@@ -57,6 +57,7 @@ public class NetworkTimeUpdateService {
+     private static final int EVENT_POLL_NETWORK_TIME = 2;
+     private static final int EVENT_WIFI_CONNECTED = 3;
+     private static final int EVENT_ETHERNET_CONNECTED = 4;
++    private static final int EVENT_NTP_SERVER_CHANGED = 5;
+ 
+     /** Normal polling frequency */
+     private static final long POLLING_INTERVAL_MS = 24L * 60 * 60 * 1000; // 24 hrs
+@@ -77,7 +78,7 @@ public class NetworkTimeUpdateService {
+     private long mNitzZoneSetTime = NOT_SET;
+ 
+     private Context mContext;
+-    private TrustedTime mTime;
++    private NtpTrustedTime mTime;
+ 
+     // NTP lookup is done on this thread and handler
+     private Handler mHandler;
+@@ -85,6 +86,7 @@ public class NetworkTimeUpdateService {
+     private AlarmManager mAlarmManager;
+     private PendingIntent mPendingPollIntent;
+     private SettingsObserver mSettingsObserver;
++    private SettingsNtpServerObserver mSettingsNtpServerObserver;
+     // The last time that we successfully fetched the NTP time.
+     private long mLastNtpFetchTime = NOT_SET;
+     // Keeps track of how many quick attempts were made to fetch NTP time.
+@@ -114,6 +116,8 @@ public class NetworkTimeUpdateService {
+ 
+         mSettingsObserver = new SettingsObserver(mHandler, EVENT_AUTO_TIME_CHANGED);
+         mSettingsObserver.observe(mContext);
++        mSettingsNtpServerObserver = new SettingsNtpServerObserver(mHandler, EVENT_NTP_SERVER_CHANGED);
++        mSettingsNtpServerObserver.observe(mContext);
+     }
+ 
+     private void registerForTelephonyIntents() {
+@@ -152,9 +156,15 @@ public class NetworkTimeUpdateService {
+         }
+         final long currentTime = System.currentTimeMillis();
+         if (DBG) Log.d(TAG, "System time = " + currentTime);
++
++        //Update server if NTP changed
++        if (event == EVENT_NTP_SERVER_CHANGED)
++        {
++            mTime.refreshServer(Settings.System.getString(mContext.getContentResolver(), Settings.System.NTP_SERVER));
++        }
+         // Get the NTP time
+         if (mLastNtpFetchTime == NOT_SET || refTime >= mLastNtpFetchTime + POLLING_INTERVAL_MS
+-                || event == EVENT_AUTO_TIME_CHANGED) {
++                || event == EVENT_AUTO_TIME_CHANGED || event == EVENT_NTP_SERVER_CHANGED) {
+             if (DBG) Log.d(TAG, "Before Ntp fetch");
+ 
+             // force refresh NTP cache when outdated
+@@ -162,8 +172,8 @@ public class NetworkTimeUpdateService {
+                 mTime.forceRefresh();
+             }
+ 
+-            // only update when NTP time is fresh
+-            if (mTime.getCacheAge() < POLLING_INTERVAL_MS) {
++            // only update when NTP time is fresh or server changed
++            if ((mTime.getCacheAge() < POLLING_INTERVAL_MS) || (event == EVENT_NTP_SERVER_CHANGED)) {
+                 final long ntp = mTime.currentTimeMillis();
+                 mTryAgainCounter = 0;
+                 mLastNtpFetchTime = SystemClock.elapsedRealtime();
+@@ -266,7 +276,8 @@ public class NetworkTimeUpdateService {
+                 case EVENT_AUTO_TIME_CHANGED:
+                 case EVENT_POLL_NETWORK_TIME:
+                 case EVENT_WIFI_CONNECTED:
+-		case EVENT_ETHERNET_CONNECTED: 
++		case EVENT_ETHERNET_CONNECTED:
++		case EVENT_NTP_SERVER_CHANGED:
+                     onPollNetworkTime(msg.what);
+                     break;
+             }
+@@ -296,4 +307,28 @@ public class NetworkTimeUpdateService {
+             mHandler.obtainMessage(mMsg).sendToTarget();
+         }
+     }
++
++    /** Observer to watch for changes to the NTP Server setting */
++    private static class SettingsNtpServerObserver extends ContentObserver {
++
++        private int mMsg;
++        private Handler mHandler;
++
++        SettingsNtpServerObserver(Handler handler, int msg) {
++            super(handler);
++            mHandler = handler;
++            mMsg = msg;
++        }
++
++        void observe(Context context) {
++            ContentResolver resolver = context.getContentResolver();
++            resolver.registerContentObserver(Settings.System.getUriFor(Settings.System.NTP_SERVER),
++                    false, this);
++        }
++
++        @Override
++        public void onChange(boolean selfChange) {
++            mHandler.obtainMessage(mMsg).sendToTarget();
++        }
++    }
+ }
+-- 
+1.7.4.1
+

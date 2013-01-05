@@ -1,0 +1,68 @@
+From 4ef87927dea53eb62a5a89ccedec77ddb4454e3c Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 3 Aug 2012 10:55:06 +0200
+Subject: [PATCH 30/50] adding proxy support in chrome HTTP stack for libstagefright
+
+---
+ media/libstagefright/chromium_http/support.cpp |   12 +++++++++++-
+ media/libstagefright/chromium_http/support.h   |    3 +++
+ 2 files changed, 14 insertions(+), 1 deletions(-)
+
+diff --git a/media/libstagefright/chromium_http/support.cpp b/media/libstagefright/chromium_http/support.cpp
+index f15014e..5e34989 100644
+--- a/media/libstagefright/chromium_http/support.cpp
++++ b/media/libstagefright/chromium_http/support.cpp
+@@ -164,6 +164,10 @@ SfRequestContext::SfRequestContext() {
+ #endif
+ 
+     char value[PROPERTY_VALUE_MAX];
++    char value_proxy[PROPERTY_VALUE_MAX];
++    std::string m_proxy;
++    std::string m_exclusionList = "";
++    property_get("net.http.proxy", value_proxy, "Unknown");
+     property_get("ro.build.version.release", value, "Unknown");
+     ua.append(value);
+     ua.append(")");
+@@ -181,8 +185,14 @@ SfRequestContext::SfRequestContext() {
+     set_ssl_config_service(
+         net::SSLConfigService::CreateSystemSSLConfigService());
+ 
++    m_proxyConfigService = new net::ProxyConfigServiceAndroid();
++    if (strcmp(value_proxy,"Unknown") != 0)
++    {
++	m_proxy = value_proxy;
++        m_proxyConfigService->UpdateProxySettings(m_proxy, m_exclusionList);
++    }
+     set_proxy_service(net::ProxyService::CreateWithoutProxyResolver(
+-        new net::ProxyConfigServiceAndroid, net_log()));
++       proxy(), net_log()));
+ 
+     set_http_transaction_factory(new net::HttpCache(
+             host_resolver(),
+diff --git a/media/libstagefright/chromium_http/support.h b/media/libstagefright/chromium_http/support.h
+index d2c5bc0..f207555 100644
+--- a/media/libstagefright/chromium_http/support.h
++++ b/media/libstagefright/chromium_http/support.h
+@@ -25,6 +25,7 @@
+ #include "net/url_request/url_request_context.h"
+ #include "net/base/android_network_library.h"
+ #include "net/base/io_buffer.h"
++#include "net/proxy/proxy_config_service_android.h"
+ 
+ #include <utils/KeyedVector.h>
+ #include <utils/String8.h>
+@@ -54,9 +55,11 @@ struct SfRequestContext : public net::URLRequestContext {
+     SfRequestContext();
+ 
+     virtual const std::string &GetUserAgent(const GURL &url) const;
++    net::ProxyConfigServiceAndroid* proxy() { return m_proxyConfigService; }
+ 
+ private:
+     std::string mUserAgent;
++    net::ProxyConfigServiceAndroid* m_proxyConfigService;
+ 
+     DISALLOW_EVIL_CONSTRUCTORS(SfRequestContext);
+ };
+-- 
+1.7.4.1
+

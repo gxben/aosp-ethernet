@@ -1,0 +1,39 @@
+From 21f2edd8130e2aa6d8dad04c1dc0bdf8e45ce862 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 12 Jul 2012 13:33:57 +0200
+Subject: [PATCH 22/50] Defining eth0 as default ethernet interface
+
+---
+ .../java/android/net/ethernet/EthernetDevInfo.java |    2 +-
+ .../java/com/android/server/EthernetService.java   |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/ethernet/java/android/net/ethernet/EthernetDevInfo.java b/ethernet/java/android/net/ethernet/EthernetDevInfo.java
+index 058eb82..5441e8e 100644
+--- a/ethernet/java/android/net/ethernet/EthernetDevInfo.java
++++ b/ethernet/java/android/net/ethernet/EthernetDevInfo.java
+@@ -47,7 +47,7 @@ public class EthernetDevInfo implements Parcelable {
+     private String mode;
+ 
+     public EthernetDevInfo () {
+-        dev_name = null;
++        dev_name = "eth0";
+         ipaddr = null;
+         dns = null;
+         route = null;
+diff --git a/services/java/com/android/server/EthernetService.java b/services/java/com/android/server/EthernetService.java
+index 46f4669..0598789 100644
+--- a/services/java/com/android/server/EthernetService.java
++++ b/services/java/com/android/server/EthernetService.java
+@@ -98,7 +98,7 @@ public class EthernetService<syncronized> extends IEthernetManager.Stub {
+     public synchronized void setMode(String mode) {
+         final ContentResolver cr = mContext.getContentResolver();
+         if (DevName != null) {
+-            Settings.Secure.putString(cr, Settings.Secure.ETHERNET_IFNAME, DevName[0]);
++            Settings.Secure.putString(cr, Settings.Secure.ETHERNET_IFNAME, "eth0");
+             Settings.Secure.putInt(cr, Settings.Secure.ETHERNET_CONF, 1);
+             Settings.Secure.putString(cr, Settings.Secure.ETHERNET_MODE, mode);
+         }
+-- 
+1.7.4.1
+

@@ -1,0 +1,34 @@
+From b9f6f325672ddacc1173b38efd7fbaba058b80cf Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 7 Aug 2012 14:32:03 +0200
+Subject: [PATCH 34/50] Adding properties for proxy to be used by OMXPlayer libraries
+
+---
+ .../com/android/server/ConnectivityService.java    |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/services/java/com/android/server/ConnectivityService.java b/services/java/com/android/server/ConnectivityService.java
+index 0ae85ff..caeda92 100644
+--- a/services/java/com/android/server/ConnectivityService.java
++++ b/services/java/com/android/server/ConnectivityService.java
+@@ -364,6 +364,8 @@ public class ConnectivityService extends IConnectivityManager.Stub {
+ 
+         mGlobalProxy = new ProxyProperties(proxyHost, proxyPort, null);
+         SystemProperties.set("net.http.proxy", proxyHost + ":" + proxyPort);
++        SystemProperties.set("net.proxy", proxyHost + ":" + proxyPort);
++        SystemProperties.set("rw.HTTP_PROXY", "http://" + proxyHost + ":" + proxyPort);
+ 
+         mContext = checkNotNull(context, "missing Context");
+         mNetd = checkNotNull(netd, "missing INetworkManagementService");
+@@ -2786,6 +2788,8 @@ private NetworkStateTracker makeWimaxStateTracker() {
+             Settings.Secure.putString(res, Settings.Secure.GLOBAL_HTTP_PROXY_EXCLUSION_LIST,
+                     exclList);
+             SystemProperties.set("net.http.proxy", host + ":" + port);
++            SystemProperties.set("net.proxy", host + ":" + port);
++            SystemProperties.set("rw.HTTP_PROXY", "http://" + host + ":" + port);
+         }
+ 
+         if (mGlobalProxy == null) {
+-- 
+1.7.4.1
+

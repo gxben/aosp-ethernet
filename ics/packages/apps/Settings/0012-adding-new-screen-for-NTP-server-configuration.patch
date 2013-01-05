@@ -1,0 +1,131 @@
+From 2cb13663142601f3ac6461f21ee7f9be1e61f37e Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 7 Aug 2012 14:26:39 +0200
+Subject: [PATCH 12/19] adding new screen for NTP server configuration
+
+---
+ res/values/strings.xml                         |    2 ++
+ res/xml/date_time_prefs.xml                    |    6 ++++++
+ src/com/android/settings/DateTimeSettings.java |   20 ++++++++++++++++++++
+ 3 files changed, 28 insertions(+), 0 deletions(-)
+
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 982a84d..46f8b03 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -624,6 +624,8 @@
+     <string name="date_time_set_timezone">Select time zone</string>
+     <!-- Date & time setting screen setting option title -->
+     <string name="date_time_set_date">Set date</string>
++    <!-- Date & time server setting screen setting option title -->
++    <string name="ntp_server_time">NTP server</string>
+     <!-- Date & time setting screen setting option title.  This setting allows the user to choose how the date should be displayed in apps (what ordering for month and day, etc.) -->
+     <string name="date_time_date_format">Select date format</string>
+     <!-- Menu item on Select time zone screen -->
+diff --git a/res/xml/date_time_prefs.xml b/res/xml/date_time_prefs.xml
+index 657d6b3..35abd7e 100644
+--- a/res/xml/date_time_prefs.xml
++++ b/res/xml/date_time_prefs.xml
+@@ -34,6 +34,12 @@
+         android:title="@string/date_time_set_time"
+         android:summary="12:00am"
+         />
++    <EditTextPreference
++        android:title="@string/ntp_server_time"
++        android:key="ntp_server"
++        android:singleLine="true"
++        android:summary="192.168.1.1"
++        android:inputType="textUri"/>
+     <PreferenceScreen
+         android:fragment="com.android.settings.ZonePicker"
+         android:key="timezone"
+diff --git a/src/com/android/settings/DateTimeSettings.java b/src/com/android/settings/DateTimeSettings.java
+index 1d8e341..058859e 100644
+--- a/src/com/android/settings/DateTimeSettings.java
++++ b/src/com/android/settings/DateTimeSettings.java
+@@ -29,6 +29,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+ import android.os.Bundle;
+ import android.os.SystemClock;
+ import android.preference.CheckBoxPreference;
++import android.preference.EditTextPreference;
+ import android.preference.ListPreference;
+ import android.preference.Preference;
+ import android.preference.PreferenceScreen;
+@@ -56,6 +57,7 @@ public class DateTimeSettings extends SettingsPreferenceFragment
+     private static final String KEY_DATE_FORMAT = "date_format";
+     private static final String KEY_AUTO_TIME = "auto_time";
+     private static final String KEY_AUTO_TIME_ZONE = "auto_zone";
++    private static final String KEY_NTP_SERVER = "ntp_server";
+ 
+     private static final int DIALOG_DATEPICKER = 0;
+     private static final int DIALOG_TIMEPICKER = 1;
+@@ -67,6 +69,7 @@ public class DateTimeSettings extends SettingsPreferenceFragment
+     private Preference mTimePref;
+     private Preference mTime24Pref;
+     private CheckBoxPreference mAutoTimeZonePref;
++    private EditTextPreference mNtpServerPref;
+     private Preference mTimeZone;
+     private Preference mDatePref;
+     private ListPreference mDateFormat;
+@@ -83,6 +86,7 @@ public class DateTimeSettings extends SettingsPreferenceFragment
+     private void initUI() {
+         boolean autoTimeEnabled = getAutoState(Settings.System.AUTO_TIME);
+         boolean autoTimeZoneEnabled = getAutoState(Settings.System.AUTO_TIME_ZONE);
++        String ntpServer = getNtpServer();
+ 
+         Intent intent = getActivity().getIntent();
+         boolean isFirstRun = intent.getBooleanExtra(EXTRA_IS_FIRST_RUN, false);
+@@ -104,6 +108,7 @@ public class DateTimeSettings extends SettingsPreferenceFragment
+         mTime24Pref = findPreference("24 hour");
+         mTimeZone = findPreference("timezone");
+         mDatePref = findPreference("date");
++        mNtpServerPref = (EditTextPreference) findPreference(KEY_NTP_SERVER);
+         mDateFormat = (ListPreference) findPreference(KEY_DATE_FORMAT);
+         if (isFirstRun) {
+             getPreferenceScreen().removePreference(mTime24Pref);
+@@ -135,6 +140,9 @@ public class DateTimeSettings extends SettingsPreferenceFragment
+         mDateFormat.setEntryValues(R.array.date_format_values);
+         mDateFormat.setValue(currentFormat);
+ 
++        mNtpServerPref.setText(ntpServer);
++        mNtpServerPref.setSummary(ntpServer);
++
+         mTimePref.setEnabled(!autoTimeEnabled);
+         mDatePref.setEnabled(!autoTimeEnabled);
+         mTimeZone.setEnabled(!autoTimeZoneEnabled);
+@@ -177,6 +185,8 @@ public class DateTimeSettings extends SettingsPreferenceFragment
+         mTimeZone.setSummary(getTimeZoneText(now.getTimeZone()));
+         mDatePref.setSummary(shortDateFormat.format(now.getTime()));
+         mDateFormat.setSummary(shortDateFormat.format(dummyDate));
++        mNtpServerPref.setText(getNtpServer());
++        mNtpServerPref.setSummary(getNtpServer());
+     }
+ 
+     @Override
+@@ -220,6 +230,12 @@ public class DateTimeSettings extends SettingsPreferenceFragment
+             Settings.System.putInt(
+                     getContentResolver(), Settings.System.AUTO_TIME_ZONE, autoZoneEnabled ? 1 : 0);
+             mTimeZone.setEnabled(!autoZoneEnabled);
++        } else if (key.equals(KEY_NTP_SERVER)) {
++            String ntpServer = preferences.getString(key,
++                    getResources().getString(R.string.ntp_server_time));
++            Settings.System.putString(getContentResolver(),
++                    Settings.System.NTP_SERVER, ntpServer);
++            updateTimeAndDateDisplay(getActivity());
+         }
+     }
+ 
+@@ -334,6 +350,10 @@ public class DateTimeSettings extends SettingsPreferenceFragment
+         }
+     }
+ 
++    private String getNtpServer() {
++        return Settings.System.getString(getContentResolver(), Settings.System.NTP_SERVER);
++    }
++
+     /*  Helper routines to format timezone */
+ 
+     /* package */ static void setDate(int year, int month, int day) {
+-- 
+1.7.4.1
+

@@ -1,0 +1,23 @@
+From a4ec3439097a97414f5649a5ad18c583d36e3c81 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 21 Jun 2012 17:09:41 +0200
+Subject: [PATCH 1/2] Patching dhcpcd daemon to handle dns properties correctly
+
+---
+ dhcpcd-hooks/20-dns.conf |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/dhcpcd-hooks/20-dns.conf b/dhcpcd-hooks/20-dns.conf
+index a92e91d..87eca70 100644
+--- a/dhcpcd-hooks/20-dns.conf
++++ b/dhcpcd-hooks/20-dns.conf
+@@ -15,8 +15,11 @@ set_dns_props()
+     count=1
+     for dnsaddr in ${new_domain_name_servers}; do
+         setprop dhcp.${interface}.dns${count} ${dnsaddr}
++        setprop net.dns${count} ${dnsaddr}
+         count=$(($count + 1))
+     done
+ }
+-- 
+1.7.4.1

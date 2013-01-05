@@ -1,0 +1,45 @@
+From 3b7071a88b28069bfa90a93a65f2405f46306b04 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 21 Jun 2012 17:18:11 +0200
+Subject: [PATCH 10/50] Adding right DNS management in Android framework
+
+---
+ .../android/net/ethernet/EthernetStateTracker.java |    5 ++++-
+ .../com/android/server/connectivity/Tethering.java |    4 ++--
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/ethernet/java/android/net/ethernet/EthernetStateTracker.java b/ethernet/java/android/net/ethernet/EthernetStateTracker.java
+index 9b78de6..d7226f8 100644
+--- a/ethernet/java/android/net/ethernet/EthernetStateTracker.java
++++ b/ethernet/java/android/net/ethernet/EthernetStateTracker.java
+@@ -385,7 +385,10 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+                              if (localLOGV) Slog.d(TAG, "DhcpHandler: DHCP request started");
+                              if (NetworkUtils.runDhcp(mInterfaceName, mDhcpInfo)) {
+                                  event = EVENT_INTERFACE_CONFIGURATION_SUCCEEDED;
+-                                 if (localLOGV) Slog.d(TAG, "DhcpHandler: DHCP request succeeded: " + mDhcpInfo.toString());
++                                 //FBR : patch for handling DHCP DNS
++				 SystemProperties.set("net.dns1", mDhcpInfo.dns1);
++                		 SystemProperties.set("net." + mInterfaceName + ".dns1", mDhcpInfo.dns1);
++    				 if (localLOGV) Slog.d(TAG, "DhcpHandler: DHCP request succeeded: " + mDhcpInfo.toString());
+                              } else {
+                                  event = EVENT_INTERFACE_CONFIGURATION_FAILED;
+                                  Slog.e(TAG, "DhcpHandler: DHCP request failed: " + NetworkUtils.getDhcpError());
+diff --git a/services/java/com/android/server/connectivity/Tethering.java b/services/java/com/android/server/connectivity/Tethering.java
+index 20550de..6ed9ccf 100644
+--- a/services/java/com/android/server/connectivity/Tethering.java
++++ b/services/java/com/android/server/connectivity/Tethering.java
+@@ -172,9 +172,9 @@ public class Tethering extends INetworkManagementEventObserver.Stub {
+         updateConfiguration();
+ 
+         // TODO - remove and rely on real notifications of the current iface
+-        mDefaultDnsServers = new String[2];
++        /*mDefaultDnsServers = new String[2];
+         mDefaultDnsServers[0] = DNS_DEFAULT_SERVER1;
+-        mDefaultDnsServers[1] = DNS_DEFAULT_SERVER2;
++        mDefaultDnsServers[1] = DNS_DEFAULT_SERVER2;*/
+     }
+ 
+     void updateConfiguration() {
+-- 
+1.7.4.1
+

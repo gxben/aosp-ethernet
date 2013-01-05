@@ -1,0 +1,91 @@
+From 85e738fa4a48c833e1df7531a8f20b18f18fe335 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 26 Jun 2012 13:38:13 +0200
+Subject: [PATCH 16/50] Redirect all getNetworkInfo requests on Ethernet for mobile and wireless connections
+
+---
+ core/java/android/net/ConnectivityManager.java     |   18 ++++++++++-
+ .../com/android/server/ConnectivityService.java    |   34 +++++++++++++++++++-
+ 2 files changed, 50 insertions(+), 2 deletions(-)
+
+diff --git a/core/java/android/net/ConnectivityManager.java b/core/java/android/net/ConnectivityManager.java
+index 755e102..4f2533a 100644
+--- a/core/java/android/net/ConnectivityManager.java
++++ b/core/java/android/net/ConnectivityManager.java
+@@ -379,7 +379,23 @@ public class ConnectivityManager {
+ 
+     public NetworkInfo getNetworkInfo(int networkType) {
+         try {
+-            return mService.getNetworkInfo(networkType);
++	    switch (networkType) {
++	        case TYPE_MOBILE:
++		case TYPE_WIFI:
++		case TYPE_WIMAX:
++		case TYPE_MOBILE_MMS:
++		case TYPE_MOBILE_SUPL:
++		case TYPE_MOBILE_DUN:
++		case TYPE_MOBILE_HIPRI:
++		case TYPE_MOBILE_FOTA:
++		case TYPE_MOBILE_IMS:
++		case TYPE_MOBILE_CBS:
++                    networkType = TYPE_ETHERNET;
++		    break;
++		default:
++		    break;
++	    }
++	    return mService.getNetworkInfo(networkType);
+         } catch (RemoteException e) {
+             return null;
+         }
+diff --git a/services/java/com/android/server/ConnectivityService.java b/services/java/com/android/server/ConnectivityService.java
+index 8e009b8..d69893f 100644
+--- a/services/java/com/android/server/ConnectivityService.java
++++ b/services/java/com/android/server/ConnectivityService.java
+@@ -781,11 +781,43 @@ private NetworkStateTracker makeWimaxStateTracker() {
+     public NetworkInfo getNetworkInfo(int networkType) {
+         enforceAccessPermission();
+         final int uid = Binder.getCallingUid();
+-        return getNetworkInfo(networkType, uid);
++        switch (networkType) {
++            case ConnectivityManager.TYPE_MOBILE:
++            case ConnectivityManager.TYPE_WIFI:
++            case ConnectivityManager.TYPE_WIMAX:
++            case ConnectivityManager.TYPE_MOBILE_MMS:
++            case ConnectivityManager.TYPE_MOBILE_SUPL:
++            case ConnectivityManager.TYPE_MOBILE_DUN:
++            case ConnectivityManager.TYPE_MOBILE_HIPRI:
++            case ConnectivityManager.TYPE_MOBILE_FOTA:
++            case ConnectivityManager.TYPE_MOBILE_IMS:
++            case ConnectivityManager.TYPE_MOBILE_CBS:
++                networkType = ConnectivityManager.TYPE_ETHERNET;
++                break;
++            default:
++                break;
++        }
++	return getNetworkInfo(networkType, uid);
+     }
+ 
+     private NetworkInfo getNetworkInfo(int networkType, int uid) {
+         NetworkInfo info = null;
++	switch (networkType) {
++            case ConnectivityManager.TYPE_MOBILE:
++            case ConnectivityManager.TYPE_WIFI:
++            case ConnectivityManager.TYPE_WIMAX:
++            case ConnectivityManager.TYPE_MOBILE_MMS:
++            case ConnectivityManager.TYPE_MOBILE_SUPL:
++            case ConnectivityManager.TYPE_MOBILE_DUN:
++            case ConnectivityManager.TYPE_MOBILE_HIPRI:
++            case ConnectivityManager.TYPE_MOBILE_FOTA:
++            case ConnectivityManager.TYPE_MOBILE_IMS:
++            case ConnectivityManager.TYPE_MOBILE_CBS:
++                networkType = ConnectivityManager.TYPE_ETHERNET;
++                break;
++            default:
++                break;
++        }
+         if (isNetworkTypeValid(networkType)) {
+             final NetworkStateTracker tracker = mNetTrackers[networkType];
+             if (tracker != null) {
+-- 
+1.7.4.1
+

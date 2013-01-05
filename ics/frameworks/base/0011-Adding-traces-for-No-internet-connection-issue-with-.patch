@@ -1,0 +1,54 @@
+From 6b8b57d044fd02046c923c3f2dae33af85cd5d91 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 21 Jun 2012 17:18:44 +0200
+Subject: [PATCH 11/50] Adding traces for No internet connection issue with Ethernet
+
+---
+ .../statusbar/policy/NetworkController.java        |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
+index dd9b28c..90d2c7c 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
+@@ -918,9 +918,12 @@ public class NetworkController extends BroadcastReceiver {
+             mBluetoothTethered = false;
+         }
+ 
++	Slog.e(TAG, "Before refresh Eth connected value = " + mEthernetConnected);
+         if (info != null && info.getType() == ConnectivityManager.TYPE_ETHERNET) {
+             mEthernetConnected = info.isConnected();
+         }
++	Slog.e(TAG, "After refresh Eth connected value = " + mEthernetConnected);
++
+         // We want to update all the icons, all at once, for any condition change
+         updateDataNetType();
+         updateWimaxIcons();
+@@ -1029,8 +1032,12 @@ public class NetworkController extends BroadcastReceiver {
+             }
+         }
+ 
++	Slog.e(TAG, "Eth connected value = " + mEthernetConnected);
+ 	if (mEthernetConnected) {
++	    Slog.e(TAG, "Updating label eth connected");
+ 	    combinedLabel = "Ethernet Connected";
++	    wifiLabel = "";
++	    mobileLabel = "";	
+ 	    combinedActivityIconId = 0;
+ 	    combinedSignalIconId = mEthernetIconId; 
+ 	}
+@@ -1241,6 +1248,11 @@ public class NetworkController extends BroadcastReceiver {
+             }
+         }
+ 
++	
++	Slog.e(TAG, "combined label value = " + combinedLabel);
++	Slog.e(TAG, "wifi label value = " + wifiLabel);
++	Slog.e(TAG, "mobile label value = " + mobileLabel);
++
+         // the combinedLabel in the notification panel
+         if (!mLastCombinedLabel.equals(combinedLabel)) {
+             mLastCombinedLabel = combinedLabel;
+-- 
+1.7.4.1
+

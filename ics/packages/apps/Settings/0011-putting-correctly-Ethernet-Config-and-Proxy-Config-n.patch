@@ -1,0 +1,60 @@
+From fb36e305dc9a89a4349eaf3cc715a0de49dd6aa6 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 3 Aug 2012 16:18:17 +0200
+Subject: [PATCH 11/19] putting correctly Ethernet Config and Proxy Config nodes in settings tree
+
+---
+ res/xml/settings_headers.xml |   30 +++++++++++++++---------------
+ 1 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/res/xml/settings_headers.xml b/res/xml/settings_headers.xml
+index e20438b..3a3fa90 100644
+--- a/res/xml/settings_headers.xml
++++ b/res/xml/settings_headers.xml
+@@ -21,6 +21,21 @@
+     <!-- WIRELESS and NETWORKS -->
+     <header android:title="@string/header_category_wireless_networks" />
+ 
++    <!-- Ethernet -->
++    <header
++        android:id="@+id/ethernet_settings"
++        android:title="@string/eth_radio_ctrl_title"
++        android:icon="@drawable/ic_settings_ethernet"
++        android:fragment="com.android.settings.ethernet.EthernetSettings"/>
++
++    <!-- Ethernet Proxy Settings -->
++    <header
++        android:id="@+id/proxy_settings"
++        android:fragment="com.android.settings.ProxySelector"
++        android:key="proxy_settings"
++        android:icon="@drawable/ic_settings_ethernet"
++        android:title="@string/ethernet_proxy_settings_title" />
++
+     <!-- Wifi -->
+     <header
+         android:id="@+id/wifi_settings"
+@@ -57,21 +72,6 @@
+         android:fragment="com.android.settings.WirelessSettings"
+         android:icon="@drawable/empty_icon" />
+ 
+-   <!-- Ethernet -->
+-   <header
+-        android:id="@+id/ethernet_settings"
+-        android:title="@string/eth_radio_ctrl_title"
+-        android:icon="@drawable/ic_settings_ethernet"
+-        android:fragment="com.android.settings.ethernet.EthernetSettings"/>
+-
+-    <!-- Ethernet Proxy Settings -->
+-    <header
+-        android:id="@+id/proxy_settings"
+-        android:fragment="com.android.settings.ProxySelector"
+-        android:key="proxy_settings"
+-        android:icon="@drawable/ic_settings_ethernet"
+-        android:title="@string/ethernet_proxy_settings_title" />
+-
+     <!-- DEVICE -->
+     <header android:title="@string/header_category_device" />
+ 
+-- 
+1.7.4.1
+

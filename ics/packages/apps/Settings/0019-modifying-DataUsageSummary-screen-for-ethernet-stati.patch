@@ -1,0 +1,105 @@
+From 181f467791f9af46c2f5bb519163d13001500955 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Mon, 3 Sep 2012 11:14:50 +0200
+Subject: [PATCH 19/19] modifying DataUsageSummary screen for ethernet statistics
+
+---
+ res/layout/data_usage_chart.xml                |    1 +
+ src/com/android/settings/DataUsageSummary.java |   31 +++++++++++++----------
+ 2 files changed, 18 insertions(+), 14 deletions(-)
+
+diff --git a/res/layout/data_usage_chart.xml b/res/layout/data_usage_chart.xml
+index 2501e9d..87587e5 100644
+--- a/res/layout/data_usage_chart.xml
++++ b/res/layout/data_usage_chart.xml
+@@ -45,6 +45,7 @@
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         android:layout_gravity="left|bottom"
++        android:background="#555555"
+         settings:strokeColor="@android:color/holo_blue_light"
+         settings:fillColor="#c033b5e5"
+         settings:fillColorSecondary="#6633b5e5" />
+diff --git a/src/com/android/settings/DataUsageSummary.java b/src/com/android/settings/DataUsageSummary.java
+index 46d6c65..608f10a 100644
+--- a/src/com/android/settings/DataUsageSummary.java
++++ b/src/com/android/settings/DataUsageSummary.java
+@@ -439,15 +439,6 @@ public class DataUsageSummary extends Fragment {
+         split4g.setVisible(hasMobile4gRadio(context) && !appDetailMode);
+         split4g.setChecked(isMobilePolicySplit());
+ 
+-        final MenuItem showWifi = menu.findItem(R.id.data_usage_menu_show_wifi);
+-        if (hasWifiRadio(context) && hasMobileRadio(context)) {
+-            showWifi.setVisible(!appDetailMode);
+-            showWifi.setChecked(mShowWifi);
+-        } else {
+-            showWifi.setVisible(false);
+-            mShowWifi = true;
+-        }
+-
+         final MenuItem showEthernet = menu.findItem(R.id.data_usage_menu_show_ethernet);
+         if (hasEthernet(context) && hasMobileRadio(context)) {
+             showEthernet.setVisible(!appDetailMode);
+@@ -456,6 +447,15 @@ public class DataUsageSummary extends Fragment {
+             showEthernet.setVisible(false);
+             mShowEthernet = true;
+         }
++
++        final MenuItem showWifi = menu.findItem(R.id.data_usage_menu_show_wifi);
++        if (hasWifiRadio(context) && hasMobileRadio(context)) {
++            showWifi.setVisible(!appDetailMode);
++            showWifi.setChecked(mShowWifi);
++        } else {
++            showWifi.setVisible(false);
++            mShowWifi = true;
++        }
+     }
+ 
+     @Override
+@@ -576,13 +576,12 @@ public class DataUsageSummary extends Fragment {
+         } else if (hasMobileRadio(context)) {
+             mTabHost.addTab(buildTabSpec(TAB_MOBILE, R.string.data_usage_tab_mobile));
+         }
+-        if (mShowWifi && hasWifiRadio(context)) {
+-            mTabHost.addTab(buildTabSpec(TAB_WIFI, R.string.data_usage_tab_wifi));
+-        }
+         if (mShowEthernet && hasEthernet(context)) {
+             mTabHost.addTab(buildTabSpec(TAB_ETHERNET, R.string.data_usage_tab_ethernet));
+         }
+-
++        if (mShowWifi && hasWifiRadio(context)) {
++            mTabHost.addTab(buildTabSpec(TAB_WIFI, R.string.data_usage_tab_wifi));
++        }
+         final boolean multipleTabs = mTabWidget.getTabCount() > 1;
+         mTabWidget.setVisibility(multipleTabs ? View.VISIBLE : View.GONE);
+         if (mIntentTab != null) {
+@@ -903,7 +902,7 @@ public class DataUsageSummary extends Fragment {
+             mBinding = false;
+         }
+ 
+-        final NetworkPolicy policy = mPolicyEditor.getPolicy(mTemplate);
++        final NetworkPolicy policy = mPolicyEditor.getOrCreatePolicy(mTemplate);
+         if (isNetworkPolicyModifiable(policy)) {
+             mDisableAtLimitView.setVisibility(View.VISIBLE);
+             mDisableAtLimit.setChecked(policy != null && policy.limitBytes != LIMIT_DISABLED);
+@@ -921,6 +920,7 @@ public class DataUsageSummary extends Fragment {
+             // generate cycle list based on policy and available history
+             updateCycleList(policy);
+         }
++
+     }
+ 
+     /**
+@@ -1568,6 +1568,9 @@ public class DataUsageSummary extends Fragment {
+             } else if (TAB_WIFI.equals(currentTab)) {
+                 message = buildDialogMessage(res, R.string.data_usage_tab_wifi);
+                 limitBytes = 5 * GB_IN_BYTES;
++            } else if (TAB_ETHERNET.equals(currentTab)) {
++                message = buildDialogMessage(res, R.string.data_usage_tab_wifi);
++                limitBytes = 5 * GB_IN_BYTES;
+             } else {
+                 throw new IllegalArgumentException("unknown current tab: " + currentTab);
+             }
+-- 
+1.7.4.1
+

@@ -1,0 +1,97 @@
+From 60a40564573fe6ac39745ad5e2b5e7f9819a3ced Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 3 Aug 2012 10:52:15 +0200
+Subject: [PATCH 10/19] adding code to retrieve Ethernet IP and MAC address
+
+---
+ src/com/android/settings/deviceinfo/Status.java |   39 +++++++++++++++++++++++
+ 1 files changed, 39 insertions(+), 0 deletions(-)
+
+diff --git a/src/com/android/settings/deviceinfo/Status.java b/src/com/android/settings/deviceinfo/Status.java
+index c315acd..82a68a2 100644
+--- a/src/com/android/settings/deviceinfo/Status.java
++++ b/src/com/android/settings/deviceinfo/Status.java
+@@ -26,6 +26,8 @@ import android.net.ConnectivityManager;
+ import android.net.NetworkInfo;
+ import android.net.wifi.WifiInfo;
+ import android.net.wifi.WifiManager;
++import android.net.ethernet.EthernetDevInfo;
++import android.net.ethernet.EthernetManager;
+ import android.os.BatteryManager;
+ import android.os.Build;
+ import android.os.Bundle;
+@@ -41,6 +43,7 @@ import android.telephony.PhoneStateListener;
+ import android.telephony.ServiceState;
+ import android.telephony.TelephonyManager;
+ import android.text.TextUtils;
++import android.util.Log;
+ 
+ import com.android.internal.telephony.Phone;
+ import com.android.internal.telephony.PhoneFactory;
+@@ -82,6 +85,8 @@ public class Status extends PreferenceActivity {
+     private static final String KEY_BATTERY_STATUS = "battery_status";
+     private static final String KEY_BATTERY_LEVEL = "battery_level";
+     private static final String KEY_IP_ADDRESS = "wifi_ip_address";
++    private static final String KEY_ETHERNET_IP_ADDRESS = "ethernet_ip_address";
++    private static final String KEY_ETHERNET_MAC_ADDRESS = "ethernet_mac_address";
+     private static final String KEY_WIFI_MAC_ADDRESS = "wifi_mac_address";
+     private static final String KEY_BT_ADDRESS = "bt_address";
+     private static final String KEY_SERIAL_NUMBER = "serial_number";
+@@ -108,6 +113,8 @@ public class Status extends PreferenceActivity {
+ 
+     private static final int EVENT_UPDATE_STATS = 500;
+ 
++    private static final String TAG = "StatusSettings";
++
+     private TelephonyManager mTelephonyManager;
+     private Phone mPhone = null;
+     private PhoneStateIntentReceiver mPhoneStateReceiver;
+@@ -255,6 +262,8 @@ public class Status extends PreferenceActivity {
+         setWifiStatus();
+         setBtStatus();
+         setIpAddressStatus();
++        setEthernetIpAddressStatus();
++        setEthernetMacAddress();
+ 
+         String serial = Build.SERIAL;
+         if (serial != null && !serial.equals("")) {
+@@ -439,6 +448,36 @@ public class Status extends PreferenceActivity {
+                 : getString(R.string.status_unavailable));
+     }
+ 
++    private void setEthernetMacAddress() {
++        EthernetManager ethernetManager = (EthernetManager) getSystemService(ETHERNET_SERVICE);
++        EthernetDevInfo ethernetInfo = ethernetManager.getSavedConfig();
++
++        Preference ethernetMacAddressPref = findPreference(KEY_ETHERNET_MAC_ADDRESS);
++
++        String macAddress = ethernetInfo == null ? null : ethernetInfo.getMacAddress();
++        Log.e(TAG, "Mac address is " + ethernetInfo.getMacAddress());
++        ethernetMacAddressPref.setSummary(!TextUtils.isEmpty(macAddress) ? macAddress
++                : getString(R.string.status_unavailable));
++    }
++
++    private void setEthernetIpAddressStatus() {
++        EthernetManager ethernetManager = (EthernetManager) getSystemService(ETHERNET_SERVICE);
++        EthernetDevInfo ethernetInfo = ethernetManager.getSavedConfig();
++
++        Preference ethernetIpAddressPref = findPreference(KEY_ETHERNET_IP_ADDRESS);
++
++        String ipAddress = null;
++        if (ethernetInfo != null) {
++            if (ethernetInfo.getIpAddress() != null)
++                ipAddress = ethernetInfo.getIpAddress();
++            else
++                ipAddress = SystemProperties.get("dhcp.eth0.ipaddress");
++	}
++
++        ethernetIpAddressPref.setSummary(!TextUtils.isEmpty(ipAddress) ? ipAddress
++                : getString(R.string.status_unavailable));
++    }
++
+     private void setIpAddressStatus() {
+         Preference ipAddressPref = findPreference(KEY_IP_ADDRESS);
+         String ipAddress = Utils.getDefaultIpAddresses(this);
+-- 
+1.7.4.1
+

@@ -1,0 +1,86 @@
+From 09f0921ca38605f3c46b344a1633e5c08a5f3e21 Mon Sep 17 00:00:00 2001
+From: Benjamin Zores <benjamin.zores@alcatel-lucent.com>
+Date: Wed, 20 Jun 2012 17:09:55 +0200
+Subject: [PATCH 03/19] use white color for ethernet text items
+
+---
+ res/layout/eth_configure.xml |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/res/layout/eth_configure.xml b/res/layout/eth_configure.xml
+index 331e625..c8f4c3e 100644
+--- a/res/layout/eth_configure.xml
++++ b/res/layout/eth_configure.xml
+@@ -19,7 +19,7 @@
+        <!-- Device list -->
+ 
+         <TextView android:id="@+id/eth_dev_list_text"
+-                style="?android:attr/textAppearanceSmallInverse"
++                style="?android:attr/textAppearanceMedium"
+                 android:layout_width="fill_parent"
+                 android:layout_height="wrap_content"
+                 android:layout_marginTop="8dip"
+@@ -32,7 +32,7 @@
+ 
+         <!-- Connection type -->
+        <TextView android:id="@+id/eth_con_type"
+-                style="?android:attr/textAppearanceSmallInverse"
++                style="?android:attr/textAppearanceMedium"
+                 android:layout_width="fill_parent"
+                 android:layout_height="wrap_content"
+                 android:layout_marginTop="8dip"
+@@ -42,13 +42,13 @@
+                 android:layout_height="wrap_content"
+                 >
+                 <RadioButton android:id="@+id/dhcp_radio"
+-                       style="?android:attr/textAppearanceSmallInverse"
++                       style="?android:attr/textAppearanceMedium"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/eth_con_type_dhcp"
+                 ></RadioButton>
+                 <RadioButton android:id="@+id/manual_radio"
+-                       style="?android:attr/textAppearanceSmallInverse"
++                       style="?android:attr/textAppearanceMedium"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/eth_con_type_manual"
+@@ -62,7 +62,7 @@
+             android:padding="0dip"
+             android:orientation="vertical">
+                 <TextView android:id="@+id/ipaddr_text"
+-                        style="?android:attr/textAppearanceSmallInverse"
++                        style="?android:attr/textAppearanceMedium"
+                         android:layout_width="fill_parent"
+                         android:layout_height="wrap_content"
+                         android:layout_marginTop="8dip"
+@@ -73,7 +73,7 @@
+                         android:layout_marginTop="2dip"
+                         android:singleLine="true" />
+                 <TextView android:id="@+id/netmask_text"
+-                        style="?android:attr/textAppearanceSmallInverse"
++                        style="?android:attr/textAppearanceMedium"
+                         android:layout_width="fill_parent"
+                         android:layout_height="wrap_content"
+                         android:layout_marginTop="8dip"
+@@ -84,7 +84,7 @@
+                         android:layout_marginTop="2dip"
+                         android:singleLine="true" />
+                 <TextView android:id="@+id/dns_text"
+-                        style="?android:attr/textAppearanceSmallInverse"
++                        style="?android:attr/textAppearanceMedium"
+                         android:layout_width="fill_parent"
+                         android:layout_height="wrap_content"
+                         android:layout_marginTop="8dip"
+@@ -95,7 +95,7 @@
+                         android:layout_marginTop="2dip"
+                         android:singleLine="true" />
+                 <TextView android:id="@+id/gw_text"
+-                        style="?android:attr/textAppearanceSmallInverse"
++                        style="?android:attr/textAppearanceMedium"
+                         android:layout_width="fill_parent"
+                         android:layout_height="wrap_content"
+                         android:layout_marginTop="8dip"
+-- 
+1.7.4.1
+

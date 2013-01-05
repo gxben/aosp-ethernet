@@ -1,0 +1,47 @@
+From e9f3b01f2b69b567ce3c4e72d466b48723ec72e2 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 3 Aug 2012 10:56:16 +0200
+Subject: [PATCH 32/50] adding new field MAC address in Ethernet configuration object
+
+---
+ .../java/android/net/ethernet/EthernetDevInfo.java |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/ethernet/java/android/net/ethernet/EthernetDevInfo.java b/ethernet/java/android/net/ethernet/EthernetDevInfo.java
+index 5441e8e..9ba907e 100644
+--- a/ethernet/java/android/net/ethernet/EthernetDevInfo.java
++++ b/ethernet/java/android/net/ethernet/EthernetDevInfo.java
+@@ -40,6 +40,7 @@ public class EthernetDevInfo implements Parcelable {
+     public static final String ETHERNET_CONN_MODE_MANUAL = "manual";
+ 
+     private String dev_name;
++    private String mac_addr;
+     private String ipaddr;
+     private String netmask;
+     private String route;
+@@ -48,6 +49,7 @@ public class EthernetDevInfo implements Parcelable {
+ 
+     public EthernetDevInfo () {
+         dev_name = "eth0";
++        mac_addr = EthernetNative.getInterfaceMacAddress();
+         ipaddr = null;
+         dns = null;
+         route = null;
+@@ -77,6 +79,14 @@ public class EthernetDevInfo implements Parcelable {
+     public String getIpAddress( ) {
+         return this.ipaddr;
+     }
++    public void setMacAddress(String mac_addr) {
++        this.mac_addr = mac_addr;
++    }
++
++    public String getMacAddress( ) {
++        return this.mac_addr;
++    }
++
+ 
+     public void setNetMask(String ip) {
+         this.netmask = ip;
+-- 
+1.7.4.1
+

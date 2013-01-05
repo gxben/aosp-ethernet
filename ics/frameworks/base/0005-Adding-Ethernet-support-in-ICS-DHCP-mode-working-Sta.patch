@@ -1,0 +1,3384 @@
+From 7d6cab12b57a3efa2a706180ffd1ea72ff581f0e Mon Sep 17 00:00:00 2001
+From: Benjamin Zores <benjamin.zores@alcatel-lucent.com>
+Date: Mon, 18 Jun 2012 16:42:11 +0200
+Subject: [PATCH 05/50] Adding Ethernet support in ICS (DHCP mode working, Static to be fixed)
+
+---
+ Android.mk                                         |    1 +
+ api/current.txt                                    |   72 +++
+ core/java/android/app/ContextImpl.java             |    9 +
+ core/java/android/app/DownloadManager.java         |    6 +
+ core/java/android/content/Context.java             |   10 +
+ core/java/android/net/EthernetDataTracker.java     |    2 +
+ core/java/android/net/NetworkUtils.java            |   12 +
+ core/java/android/provider/Settings.java           |   12 +
+ core/jni/Android.mk                                |    1 +
+ core/jni/AndroidRuntime.cpp                        |    2 +
+ core/jni/android_net_NetUtils.cpp                  |   31 ++
+ core/jni/android_net_ethernet.cpp                  |  420 ++++++++++++++++
+ core/res/res/values/config.xml                     |    5 +-
+ .../java/android/net/ethernet/EthernetDevInfo.aidl |   19 +
+ .../java/android/net/ethernet/EthernetDevInfo.java |  152 ++++++
+ .../java/android/net/ethernet/EthernetManager.java |  181 +++++++
+ .../java/android/net/ethernet/EthernetMonitor.java |  134 +++++
+ .../java/android/net/ethernet/EthernetNative.java  |   30 ++
+ .../android/net/ethernet/EthernetStateTracker.java |  509 ++++++++++++++++++++
+ .../android/net/ethernet/IEthernetManager.aidl     |   30 ++
+ .../res/drawable-hdpi/connect_creating.png         |  Bin 0 -> 429 bytes
+ .../res/drawable-hdpi/connect_established.png      |  Bin 0 -> 5009 bytes
+ packages/SystemUI/res/drawable-hdpi/connect_no.png |  Bin 0 -> 438 bytes
+ .../drawable-hdpi/stat_sys_ethernet_connected.png  |  Bin 0 -> 1039 bytes
+ .../stat_sys_ethernet_disconnected.png             |  Bin 0 -> 889 bytes
+ .../res/drawable-mdpi/connect_creating.png         |  Bin 0 -> 476 bytes
+ .../res/drawable-mdpi/connect_established.png      |  Bin 0 -> 876 bytes
+ packages/SystemUI/res/drawable-mdpi/connect_no.png |  Bin 0 -> 373 bytes
+ .../drawable-mdpi/stat_sys_ethernet_connected.png  |  Bin 0 -> 794 bytes
+ .../stat_sys_ethernet_disconnected.png             |  Bin 0 -> 702 bytes
+ .../stat_sys_ethernet_connected.png                |  Bin 0 -> 1925 bytes
+ .../stat_sys_ethernet_disconnected.png             |  Bin 0 -> 1536 bytes
+ .../stat_sys_ethernet_connected.png                |  Bin 0 -> 1127 bytes
+ .../stat_sys_ethernet_disconnected.png             |  Bin 0 -> 983 bytes
+ .../stat_sys_ethernet_connected.png                |  Bin 0 -> 2811 bytes
+ .../stat_sys_ethernet_disconnected.png             |  Bin 0 -> 2303 bytes
+ .../drawable-xhdpi/stat_sys_ethernet_connected.png |  Bin 0 -> 1925 bytes
+ .../stat_sys_ethernet_disconnected.png             |  Bin 0 -> 1536 bytes
+ .../res/drawable/stat_sys_ethernet_connected.png   |  Bin 0 -> 1039 bytes
+ .../drawable/stat_sys_ethernet_disconnected.png    |  Bin 0 -> 889 bytes
+ .../SystemUI/res/layout/signal_cluster_view.xml    |   28 +-
+ .../systemui/statusbar/SignalClusterView.java      |   29 +-
+ .../systemui/statusbar/phone/PhoneStatusBar.java   |    7 +
+ .../statusbar/policy/NetworkController.java        |   95 ++++-
+ .../systemui/statusbar/tablet/TabletStatusBar.java |    6 +
+ .../com/android/server/ConnectivityService.java    |   27 +-
+ .../java/com/android/server/EthernetService.java   |  212 ++++++++
+ 47 files changed, 2031 insertions(+), 11 deletions(-)
+ create mode 100644 core/jni/android_net_ethernet.cpp
+ create mode 100644 ethernet/java/android/net/ethernet/EthernetDevInfo.aidl
+ create mode 100644 ethernet/java/android/net/ethernet/EthernetDevInfo.java
+ create mode 100644 ethernet/java/android/net/ethernet/EthernetManager.java
+ create mode 100644 ethernet/java/android/net/ethernet/EthernetMonitor.java
+ create mode 100644 ethernet/java/android/net/ethernet/EthernetNative.java
+ create mode 100644 ethernet/java/android/net/ethernet/EthernetStateTracker.java
+ create mode 100644 ethernet/java/android/net/ethernet/IEthernetManager.aidl
+ create mode 100755 packages/SystemUI/res/drawable-hdpi/connect_creating.png
+ create mode 100755 packages/SystemUI/res/drawable-hdpi/connect_established.png
+ create mode 100755 packages/SystemUI/res/drawable-hdpi/connect_no.png
+ create mode 100644 packages/SystemUI/res/drawable-hdpi/stat_sys_ethernet_connected.png
+ create mode 100644 packages/SystemUI/res/drawable-hdpi/stat_sys_ethernet_disconnected.png
+ create mode 100755 packages/SystemUI/res/drawable-mdpi/connect_creating.png
+ create mode 100755 packages/SystemUI/res/drawable-mdpi/connect_established.png
+ create mode 100755 packages/SystemUI/res/drawable-mdpi/connect_no.png
+ create mode 100644 packages/SystemUI/res/drawable-mdpi/stat_sys_ethernet_connected.png
+ create mode 100644 packages/SystemUI/res/drawable-mdpi/stat_sys_ethernet_disconnected.png
+ create mode 100644 packages/SystemUI/res/drawable-sw600dp-hdpi/stat_sys_ethernet_connected.png
+ create mode 100644 packages/SystemUI/res/drawable-sw600dp-hdpi/stat_sys_ethernet_disconnected.png
+ create mode 100644 packages/SystemUI/res/drawable-sw600dp-mdpi/stat_sys_ethernet_connected.png
+ create mode 100644 packages/SystemUI/res/drawable-sw600dp-mdpi/stat_sys_ethernet_disconnected.png
+ create mode 100644 packages/SystemUI/res/drawable-sw600dp-xhdpi/stat_sys_ethernet_connected.png
+ create mode 100644 packages/SystemUI/res/drawable-sw600dp-xhdpi/stat_sys_ethernet_disconnected.png
+ create mode 100644 packages/SystemUI/res/drawable-xhdpi/stat_sys_ethernet_connected.png
+ create mode 100644 packages/SystemUI/res/drawable-xhdpi/stat_sys_ethernet_disconnected.png
+ create mode 100644 packages/SystemUI/res/drawable/stat_sys_ethernet_connected.png
+ create mode 100644 packages/SystemUI/res/drawable/stat_sys_ethernet_disconnected.png
+ create mode 100644 services/java/com/android/server/EthernetService.java
+
+diff --git a/Android.mk b/Android.mk
+index f845cb3..560b68e 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -197,6 +197,7 @@ LOCAL_SRC_FILES += \
+ 	telephony/java/com/android/internal/telephony/IWapPushManager.aidl \
+ 	wifi/java/android/net/wifi/IWifiManager.aidl \
+ 	wifi/java/android/net/wifi/p2p/IWifiP2pManager.aidl \
++	ethernet/java/android/net/ethernet/IEthernetManager.aidl \
+ 	telephony/java/com/android/internal/telephony/IExtendedNetworkService.aidl \
+ 	voip/java/android/net/sip/ISipSession.aidl \
+ 	voip/java/android/net/sip/ISipSessionListener.aidl \
+diff --git a/api/current.txt b/api/current.txt
+index 06e83cd..92a90cf 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -3198,6 +3198,7 @@ package android.app {
+     method public deprecated android.app.DownloadManager.Request setShowRunningNotification(boolean);
+     method public android.app.DownloadManager.Request setTitle(java.lang.CharSequence);
+     method public android.app.DownloadManager.Request setVisibleInDownloadsUi(boolean);
++    field public static final int NETWORK_ETHERNET = 4; // 0x4
+     field public static final int NETWORK_MOBILE = 1; // 0x1
+     field public static final int NETWORK_WIFI = 2; // 0x2
+     field public static final int VISIBILITY_HIDDEN = 2; // 0x2
+@@ -5110,6 +5111,7 @@ package android.content {
+     field public static final java.lang.String DISPLAYMANAGER_SERVICE = "display_manager";
+     field public static final java.lang.String DOWNLOAD_SERVICE = "download";
+     field public static final java.lang.String DROPBOX_SERVICE = "dropbox";
++    field public static final java.lang.String ETHERNET_SERVICE = "ethernet";
+     field public static final java.lang.String INPUT_METHOD_SERVICE = "input_method";
+     field public static final java.lang.String KEYGUARD_SERVICE = "keyguard";
+     field public static final java.lang.String LAYOUT_INFLATER_SERVICE = "layout_inflater";
+@@ -11989,6 +11991,68 @@ package android.net {
+ 
+ }
+ 
++package android.net.ethernet {
++
++  public class EthernetDevInfo implements android.os.Parcelable {
++    ctor public EthernetDevInfo();
++    method public int describeContents();
++    method public java.lang.String getConnectMode();
++    method public java.lang.String getDnsAddr();
++    method public java.lang.String getIfName();
++    method public java.lang.String getIpAddress();
++    method public java.lang.String getNetMask();
++    method public java.lang.String getRouteAddr();
++    method public boolean setConnectMode(java.lang.String);
++    method public void setDnsAddr(java.lang.String);
++    method public void setIfName(java.lang.String);
++    method public void setIpAddress(java.lang.String);
++    method public void setNetMask(java.lang.String);
++    method public void setRouteAddr(java.lang.String);
++    method public void writeToParcel(android.os.Parcel, int);
++    field public static final java.lang.String ETHERNET_CONN_MODE_DHCP = "dhcp";
++    field public static final java.lang.String ETHERNET_CONN_MODE_MANUAL = "manual";
++  }
++
++  public class EthernetManager {
++    ctor public EthernetManager(android.net.ethernet.IEthernetManager, android.os.Handler);
++    method public java.lang.String[] getDeviceNameList();
++    method public android.net.ethernet.EthernetDevInfo getSavedConfig();
++    method public int getState();
++    method public int getTotalInterface();
++    method public boolean isConfigured();
++    method public void updateDevInfo(android.net.ethernet.EthernetDevInfo);
++    field public static final int ETHERNET_DEVICE_SCAN_RESULT_READY = 0; // 0x0
++    field public static final java.lang.String ETHERNET_STATE_CHANGED_ACTION = "android.net.ethernet.ETHERNET_STATE_CHANGED";
++    field public static final int ETHERNET_STATE_DISABLED = 1; // 0x1
++    field public static final int ETHERNET_STATE_ENABLED = 2; // 0x2
++    field public static final int ETHERNET_STATE_UNKNOWN = 0; // 0x0
++    field public static final java.lang.String EXTRA_ETHERNET_STATE = "ETHERNET_state";
++    field public static final java.lang.String EXTRA_NETWORK_INFO = "networkInfo";
++    field public static final java.lang.String EXTRA_PREVIOUS_ETHERNET_STATE = "previous_ETHERNET_state";
++    field public static final java.lang.String NETWORK_STATE_CHANGED_ACTION = "android.net.ethernet.STATE_CHANGE";
++    field public static final java.lang.String TAG = "EthernetManager";
++  }
++
++  public abstract interface IEthernetManager implements android.os.IInterface {
++    method public abstract java.lang.String[] getDeviceNameList() throws android.os.RemoteException;
++    method public abstract android.net.ethernet.EthernetDevInfo getSavedConfig() throws android.os.RemoteException;
++    method public abstract int getState() throws android.os.RemoteException;
++    method public abstract int getTotalInterface() throws android.os.RemoteException;
++    method public abstract boolean isConfigured() throws android.os.RemoteException;
++    method public abstract void setMode(java.lang.String) throws android.os.RemoteException;
++    method public abstract void setState(int) throws android.os.RemoteException;
++    method public abstract void updateDevInfo(android.net.ethernet.EthernetDevInfo) throws android.os.RemoteException;
++  }
++
++  public static abstract class IEthernetManager.Stub extends android.os.Binder implements android.net.ethernet.IEthernetManager {
++    ctor public IEthernetManager.Stub();
++    method public android.os.IBinder asBinder();
++    method public static android.net.ethernet.IEthernetManager asInterface(android.os.IBinder);
++    method public boolean onTransact(int, android.os.Parcel, android.os.Parcel, int) throws android.os.RemoteException;
++  }
++
++}
++
+ package android.net.http {
+ 
+   public final class AndroidHttpClient implements org.apache.http.client.HttpClient {
+@@ -17499,6 +17563,14 @@ package android.provider {
+     field public static final java.lang.String DEVICE_PROVISIONED = "device_provisioned";
+     field public static final java.lang.String ENABLED_ACCESSIBILITY_SERVICES = "enabled_accessibility_services";
+     field public static final java.lang.String ENABLED_INPUT_METHODS = "enabled_input_methods";
++    field public static final java.lang.String ETHERNET_CONF = "ethernet_conf";
++    field public static final java.lang.String ETHERNET_DNS = "ethernet_dns";
++    field public static final java.lang.String ETHERNET_IFNAME = "ethernet_ifname";
++    field public static final java.lang.String ETHERNET_IP = "ethernet_ip";
++    field public static final java.lang.String ETHERNET_MASK = "ethernet_netmask";
++    field public static final java.lang.String ETHERNET_MODE = "ethernet_mode";
++    field public static final java.lang.String ETHERNET_ON = "ethernet_on";
++    field public static final java.lang.String ETHERNET_ROUTE = "ethernet_iproute";
+     field public static final java.lang.String HTTP_PROXY = "http_proxy";
+     field public static final java.lang.String INPUT_METHOD_SELECTOR_VISIBILITY = "input_method_selector_visibility";
+     field public static final java.lang.String INSTALL_NON_MARKET_APPS = "install_non_market_apps";
+diff --git a/core/java/android/app/ContextImpl.java b/core/java/android/app/ContextImpl.java
+index a1fff58..826c243 100644
+--- a/core/java/android/app/ContextImpl.java
++++ b/core/java/android/app/ContextImpl.java
+@@ -61,6 +61,8 @@ import android.net.wifi.IWifiManager;
+ import android.net.wifi.WifiManager;
+ import android.net.wifi.p2p.IWifiP2pManager;
+ import android.net.wifi.p2p.WifiP2pManager;
++import android.net.ethernet.IEthernetManager;
++import android.net.ethernet.EthernetManager;
+ import android.nfc.NfcManager;
+ import android.os.Binder;
+ import android.os.Bundle;
+@@ -456,6 +458,13 @@ class ContextImpl extends Context {
+                     return new WifiP2pManager(service);
+                 }});
+ 
++        registerService(ETHERNET_SERVICE, new ServiceFetcher() {
++                public Object createService(ContextImpl ctx) {
++                    IBinder b = ServiceManager.getService(ETHERNET_SERVICE);
++                    IEthernetManager service = IEthernetManager.Stub.asInterface(b);
++                    return new EthernetManager(service, ctx.mMainThread.getHandler());
++                }});
++
+         registerService(WINDOW_SERVICE, new ServiceFetcher() {
+                 public Object getService(ContextImpl ctx) {
+                     return WindowManagerImpl.getDefault(ctx.mPackageInfo.mCompatibilityInfo);
+diff --git a/core/java/android/app/DownloadManager.java b/core/java/android/app/DownloadManager.java
+index ad8d41f..1282cf3 100644
+--- a/core/java/android/app/DownloadManager.java
++++ b/core/java/android/app/DownloadManager.java
+@@ -341,6 +341,12 @@ public class DownloadManager {
+          */
+         public static final int NETWORK_WIFI = 1 << 1;
+ 
++        /**
++         * Bit flag for {@link #setAllowedNetworkTypes} corresponding to
++         * {@link ConnectivityManager#TYPE_ETHERNET}.
++         */
++        public static final int NETWORK_ETHERNET = 1 << 2;
++
+         private Uri mUri;
+         private Uri mDestinationUri;
+         private List<Pair<String, String>> mRequestHeaders = new ArrayList<Pair<String, String>>();
+diff --git a/core/java/android/content/Context.java b/core/java/android/content/Context.java
+index 4ab6752..bc65b3a 100644
+--- a/core/java/android/content/Context.java
++++ b/core/java/android/content/Context.java
+@@ -1461,6 +1461,16 @@ public abstract class Context {
+      */
+     public static final String WINDOW_SERVICE = "window";
+ 
++     /**
++     * Use with {@link #getSystemService} to retrieve a {@link
++     * android.net.ethernet.EthernetManager} for handling management of
++     * Ethernet access.
++     *
++     * @see #getSystemService
++     * @see android.net.ethernet.EthernetManager
++     */
++    public static final String ETHERNET_SERVICE = "ethernet";
++
+     /**
+      * Use with {@link #getSystemService} to retrieve a
+      * {@link android.view.LayoutInflater} for inflating layout resources in this
+diff --git a/core/java/android/net/EthernetDataTracker.java b/core/java/android/net/EthernetDataTracker.java
+index 21ecc22..227c678 100644
+--- a/core/java/android/net/EthernetDataTracker.java
++++ b/core/java/android/net/EthernetDataTracker.java
+@@ -83,6 +83,8 @@ public class EthernetDataTracker implements NetworkStateTracker {
+                     mTracker.mNetworkInfo.setIsAvailable(false);
+                     mTracker.mNetworkInfo.setDetailedState(DetailedState.DISCONNECTED,
+                                                            null, null);
++                    Message msg = mTracker.mCsHandler.obtainMessage(EVENT_STATE_CHANGED, mTracker.mNetworkInfo);
++                    msg.sendToTarget();
+                 }
+             }
+         }
+diff --git a/core/java/android/net/NetworkUtils.java b/core/java/android/net/NetworkUtils.java
+index d39e741..daa8d35 100644
+--- a/core/java/android/net/NetworkUtils.java
++++ b/core/java/android/net/NetworkUtils.java
+@@ -102,6 +102,18 @@ public class NetworkUtils {
+      */
+     public native static String getDhcpError();
+ 
++    public static boolean configureInterface(String interfaceName, DhcpInfo ipInfo) {
++        return configureNative(interfaceName,
++            ipInfo.ipAddress,
++            netmaskIntToPrefixLength(ipInfo.netmask),
++            ipInfo.gateway,
++            ipInfo.dns1,
++            ipInfo.dns2);
++    }
++
++    private native static boolean configureNative(
++        String interfaceName, int ipAddress, int prefixLength, int gateway, int dns1, int dns2);
++
+     /**
+      * Convert a IPv4 address from an integer to an InetAddress.
+      * @param hostAddress an int corresponding to the IPv4 address in network byte order
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 792ed3c..55daf9b 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -3206,6 +3206,18 @@ public final class Settings {
+             "wifi_mobile_data_transition_wakelock_timeout_ms";
+ 
+         /**
++         * Ethernet related configurations
++         */
++        public static final String ETHERNET_ON      = "ethernet_on";
++        public static final String ETHERNET_MODE    = "ethernet_mode";
++        public static final String ETHERNET_IP      = "ethernet_ip";
++        public static final String ETHERNET_MASK    = "ethernet_netmask";
++        public static final String ETHERNET_DNS     = "ethernet_dns";
++        public static final String ETHERNET_ROUTE   = "ethernet_iproute";
++        public static final String ETHERNET_CONF    = "ethernet_conf";
++        public static final String ETHERNET_IFNAME  = "ethernet_ifname";
++
++        /**
+          * Whether background data usage is allowed by the user. See
+          * ConnectivityManager for more info.
+          */
+diff --git a/core/jni/Android.mk b/core/jni/Android.mk
+index c6be281..7b694bd 100644
+--- a/core/jni/Android.mk
++++ b/core/jni/Android.mk
+@@ -78,6 +78,7 @@ LOCAL_SRC_FILES:= \
+ 	android_net_NetUtils.cpp \
+ 	android_net_TrafficStats.cpp \
+ 	android_net_wifi_Wifi.cpp \
++        android_net_ethernet.cpp \
+ 	android_nio_utils.cpp \
+ 	android_nfc_NdefMessage.cpp \
+ 	android_nfc_NdefRecord.cpp \
+diff --git a/core/jni/AndroidRuntime.cpp b/core/jni/AndroidRuntime.cpp
+index c00e6c9..814570d 100644
+--- a/core/jni/AndroidRuntime.cpp
++++ b/core/jni/AndroidRuntime.cpp
+@@ -146,6 +146,7 @@ extern int register_android_net_LocalSocketImpl(JNIEnv* env);
+ extern int register_android_net_NetworkUtils(JNIEnv* env);
+ extern int register_android_net_TrafficStats(JNIEnv* env);
+ extern int register_android_net_wifi_WifiManager(JNIEnv* env);
++extern int register_android_net_ethernet_EthernetManager(JNIEnv* env);
+ extern int register_android_text_AndroidCharacter(JNIEnv *env);
+ extern int register_android_text_AndroidBidi(JNIEnv *env);
+ extern int register_android_text_KeyCharacterMap(JNIEnv *env);
+@@ -1159,6 +1160,7 @@ static const RegJNIRec gRegJNI[] = {
+     REG_JNI(register_android_net_NetworkUtils),
+     REG_JNI(register_android_net_TrafficStats),
+     REG_JNI(register_android_net_wifi_WifiManager),
++    REG_JNI(register_android_net_ethernet_EthernetManager),
+     REG_JNI(register_android_nfc_NdefMessage),
+     REG_JNI(register_android_nfc_NdefRecord),
+     REG_JNI(register_android_os_MemoryFile),
+diff --git a/core/jni/android_net_NetUtils.cpp b/core/jni/android_net_NetUtils.cpp
+index d9bd50e..e13c718 100644
+--- a/core/jni/android_net_NetUtils.cpp
++++ b/core/jni/android_net_NetUtils.cpp
+@@ -27,6 +27,8 @@ extern "C" {
+ int ifc_enable(const char *ifname);
+ int ifc_disable(const char *ifname);
+ int ifc_reset_connections(const char *ifname, int reset_mask);
++int ifc_configure(const char *ifname, in_addr_t ipaddr, uint32_t prefixLength, in_addr_t gateway, in_addr_t dns1, in_addr_t dns2);
++int ifc_remove_default_route(const char *ifname);
+ 
+ int dhcp_do_request(const char *ifname,
+                     const char *ipaddr,
+@@ -90,6 +92,16 @@ static jint android_net_utils_disableInterface(JNIEnv* env, jobject clazz, jstri
+     return (jint)result;
+ }
+ 
++static jint android_net_utils_removeDefaultRoute(JNIEnv* env, jobject clazz, jstring ifname)
++{
++    int result;
++
++    const char *nameStr = env->GetStringUTFChars(ifname, NULL);
++    result = ::ifc_remove_default_route(nameStr);
++    env->ReleaseStringUTFChars(ifname, nameStr);
++    return (jint)result;
++}
++
+ static jint android_net_utils_resetConnections(JNIEnv* env, jobject clazz,
+       jstring ifname, jint mask)
+ {
+@@ -165,6 +177,24 @@ static jboolean android_net_utils_runDhcpCommon(JNIEnv* env, jobject clazz, jstr
+     return (jboolean)(result == 0);
+ }
+ 
++static jboolean android_net_utils_configureInterface(JNIEnv* env,
++        jobject clazz,
++        jstring ifname,
++        jint ipaddr,
++        jint prefixLength,
++        jint gateway,
++        jint dns1,
++        jint dns2)
++{
++    int result;
++    uint32_t lease;
++
++    const char *nameStr = env->GetStringUTFChars(ifname, NULL);
++    result = ifc_configure(nameStr, ipaddr, prefixLength, gateway, dns1, dns2);
++    env->ReleaseStringUTFChars(ifname, nameStr);
++    return (jboolean)(result == 0);
++}
++
+ static jboolean android_net_utils_runDhcp(JNIEnv* env, jobject clazz, jstring ifname, jobject info)
+ {
+     return android_net_utils_runDhcpCommon(env, clazz, ifname, info, false);
+@@ -217,6 +247,7 @@ static JNINativeMethod gNetworkUtilMethods[] = {
+     { "stopDhcp", "(Ljava/lang/String;)Z",  (void *)android_net_utils_stopDhcp },
+     { "releaseDhcpLease", "(Ljava/lang/String;)Z",  (void *)android_net_utils_releaseDhcpLease },
+     { "getDhcpError", "()Ljava/lang/String;", (void*) android_net_utils_getDhcpError },
++    { "configureNative", "(Ljava/lang/String;IIIII)Z",  (void *)android_net_utils_configureInterface },
+ };
+ 
+ int register_android_net_NetworkUtils(JNIEnv* env)
+diff --git a/core/jni/android_net_ethernet.cpp b/core/jni/android_net_ethernet.cpp
+new file mode 100644
+index 0000000..f540b30
+--- /dev/null
++++ b/core/jni/android_net_ethernet.cpp
+@@ -0,0 +1,420 @@
++/*
++ * Copyright 2010, The Android-x86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * Author: Yi Sun <beyounn@gmail.com>
++ */
++
++#define LOG_TAG "ethernet"
++
++#include "jni.h"
++#include <inttypes.h>
++#include <utils/misc.h>
++#include <android_runtime/AndroidRuntime.h>
++#include <utils/Log.h>
++#include <asm/types.h>
++#include <linux/netlink.h>
++#include <linux/rtnetlink.h>
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <poll.h>
++#include <net/if_arp.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <string.h>
++#include <dirent.h>
++
++
++#define ETH_PKG_NAME     "android/net/ethernet/EthernetNative"
++#define NL_SOCK_INV      -1
++#define RET_STR_SZ       4096
++#define NL_POLL_MSG_SZ   8*1024
++#define SYSFS_PATH_MAX   256
++
++namespace android {
++    static struct fieldIds {
++        jclass dhcpInfoClass;
++        jmethodID constructorId;
++        jfieldID ipaddress;
++        jfieldID gateway;
++        jfieldID netmask;
++        jfieldID dns1;
++        jfieldID dns2;
++        jfieldID serverAddress;
++        jfieldID leaseDuration;
++    } dhcpInfoFieldIds;
++
++    struct interface_info_t {
++        unsigned int i;                   /* interface index        */
++        char *name;                       /* name (eth0, eth1, ...) */
++        struct interface_info_t *next;
++    };
++
++    interface_info_t *interfaces = NULL;
++    int total_int = 0;
++    static const char SYSFS_CLASS_NET[] = "/sys/class/net";
++    static int nl_socket_msg = NL_SOCK_INV;
++    static struct sockaddr_nl addr_msg;
++    static int nl_socket_poll = NL_SOCK_INV;
++    static struct sockaddr_nl addr_poll;
++    static int getinterfacename(int index, char *name, size_t len);
++
++    static interface_info_t *find_info_by_index(unsigned int index)
++    {
++        interface_info_t *info = interfaces;
++        while (info) {
++            if (info->i == index)
++                break;
++            info = info->next;
++        }
++        return info;
++    }
++
++    static jstring android_net_ethernet_waitForEvent(JNIEnv *env, jobject clazz)
++    {
++        char *buff;
++        struct nlmsghdr *nh;
++        struct ifinfomsg *einfo;
++        struct iovec iov;
++        struct msghdr msg;
++        char *result = NULL;
++        char rbuf[4096];
++        unsigned int left;
++        interface_info_t *info;
++        int len;
++
++        LOGV("Poll events from ethernet devices");
++        /*
++         *wait on uevent netlink socket for the ethernet device
++         */
++        buff = (char *)malloc(NL_POLL_MSG_SZ);
++        if (!buff) {
++            LOGE("Allocate poll buffer failed");
++            goto error;
++        }
++
++        iov.iov_base = buff;
++        iov.iov_len = NL_POLL_MSG_SZ;
++        msg.msg_name = (void *)&addr_msg;
++        msg.msg_namelen =  sizeof(addr_msg);
++        msg.msg_iov =  &iov;
++        msg.msg_iovlen =  1;
++        msg.msg_control =  NULL;
++        msg.msg_controllen =  0;
++        msg.msg_flags =  0;
++
++        if ((len = recvmsg(nl_socket_poll, &msg, 0)) >= 0) {
++            LOGV("recvmsg get data");
++            result = rbuf;
++            left = 4096;
++            rbuf[0] = '\0';
++            for (nh = (struct nlmsghdr *) buff; NLMSG_OK (nh, len);
++                 nh = NLMSG_NEXT (nh, len)) {
++
++                if (nh->nlmsg_type == NLMSG_DONE) {
++                    LOGE("Did not find useful eth interface information");
++                    goto error;
++                }
++
++                if (nh->nlmsg_type == NLMSG_ERROR) {
++                    /* Do some error handling. */
++                    LOGE("Read device name failed");
++                    goto error;
++                }
++
++                LOGV(" event :%d  found", nh->nlmsg_type);
++                einfo = (struct ifinfomsg *)NLMSG_DATA(nh);
++                LOGV("the device flag :%X", einfo->ifi_flags);
++                if (nh->nlmsg_type == RTM_DELLINK ||
++                    nh->nlmsg_type == RTM_NEWLINK ||
++                    nh->nlmsg_type == RTM_DELADDR ||
++                    nh->nlmsg_type == RTM_NEWADDR) {
++                    int type = nh->nlmsg_type;
++                    if (type == RTM_NEWLINK &&
++                        (!(einfo->ifi_flags & IFF_LOWER_UP))) {
++                        type = RTM_DELLINK;
++                    }
++                    if ((info = find_info_by_index
++                          (((struct ifinfomsg*) NLMSG_DATA(nh))->ifi_index)) != NULL)
++                        snprintf(result,left, "%s:%d:",info->name,type);
++                    left = left - strlen(result);
++                    result =(char *)(result+ strlen(result));
++                }
++
++            }
++            LOGV("Done parsing");
++            rbuf[4096 - left] = '\0';
++            LOGV("poll state :%s, left:%d", rbuf, left);
++        }
++
++
++    error:
++        free(buff);
++        return env->NewStringUTF(rbuf);
++    }
++
++    static int netlink_send_dump_request(int sock, int type, int family)
++    {
++        int ret;
++        char buf[4096];
++        struct sockaddr_nl snl;
++        struct nlmsghdr *nlh;
++        struct rtgenmsg *g;
++
++        memset(&snl, 0, sizeof(snl));
++        snl.nl_family = AF_NETLINK;
++
++        memset(buf, 0, sizeof(buf));
++        nlh = (struct nlmsghdr *)buf;
++        g = (struct rtgenmsg *)(buf + sizeof(struct nlmsghdr));
++
++        nlh->nlmsg_len = NLMSG_LENGTH(sizeof(struct rtgenmsg));
++        nlh->nlmsg_flags = NLM_F_REQUEST|NLM_F_DUMP;
++        nlh->nlmsg_type = type;
++        g->rtgen_family = family;
++
++        ret = sendto(sock, buf, nlh->nlmsg_len, 0, (struct sockaddr *)&snl,
++                     sizeof(snl));
++        if (ret < 0) {
++            perror("netlink_send_dump_request sendto");
++            return -1;
++        }
++
++        return ret;
++    }
++
++    static void free_int_list()
++    {
++        interface_info_t *tmp = interfaces;
++        while (tmp) {
++            if (tmp->name)
++                free(tmp->name);
++            interfaces = tmp->next;
++            free(tmp);
++            tmp = interfaces;
++            total_int--;
++        }
++        if (total_int) {
++            LOGE("Wrong interface count found");
++            total_int = 0;
++        }
++    }
++
++    static void add_int_to_list(interface_info_t *node)
++    {
++        /* Todo: Lock here!!!! */
++        node->next = interfaces;
++        interfaces = node;
++        total_int++;
++    }
++
++    static int netlink_init_interfaces_list(void)
++    {
++        int ret = -1;
++        DIR  *netdir;
++        struct dirent *de;
++        char path[SYSFS_PATH_MAX];
++        interface_info_t *intfinfo;
++        int index;
++        FILE *ifidx;
++        #define MAX_FGETS_LEN 4
++        char idx[MAX_FGETS_LEN+1];
++
++        if ((netdir = opendir(SYSFS_CLASS_NET)) != NULL) {
++             while ((de = readdir(netdir))) {
++                if ((!strcmp(de->d_name, ".")) || (!strcmp(de->d_name, ".."))
++                    ||(!strcmp(de->d_name, "lo")) || (!strcmp(de->d_name, "wmaster0")) ||
++                    (!strcmp(de->d_name, "pan0")))
++		        continue;
++                snprintf(path, SYSFS_PATH_MAX,"%s/%s/phy80211", SYSFS_CLASS_NET, de->d_name);
++                if (!access(path, F_OK))
++                        continue;
++                snprintf(path, SYSFS_PATH_MAX,"%s/%s/wireless", SYSFS_CLASS_NET, de->d_name);
++                if (!access(path, F_OK))
++                        continue;
++
++                snprintf(path, SYSFS_PATH_MAX,"%s/%s/ifindex", SYSFS_CLASS_NET, de->d_name);
++                if ((ifidx = fopen(path, "r")) != NULL) {
++                    memset(idx, 0, MAX_FGETS_LEN + 1);
++                    if (fgets(idx,MAX_FGETS_LEN, ifidx) != NULL) {
++                        index = strtoimax(idx, NULL, 10);
++                    } else {
++                        LOGE("Can not read %s", path);
++                        continue;
++                    }
++                } else {
++                    LOGE("Can not open %s for read", path);
++                    continue;
++                }
++                /* make some room! */
++                intfinfo = (interface_info_t *)malloc(sizeof(interface_info_t));
++                if (intfinfo == NULL) {
++                    LOGE("malloc in netlink_init_interfaces_table");
++                    goto error;
++                }
++                /* copy the interface name (eth0, eth1, ...) */
++                intfinfo->name = strndup((char *) de->d_name, SYSFS_PATH_MAX);
++                intfinfo->i = index;
++                LOGI("interface %s:%d found", intfinfo->name, intfinfo->i);
++                add_int_to_list(intfinfo);
++            }
++            closedir(netdir);
++        }
++        ret = 0;
++
++    error:
++        return ret;
++    }
++
++    /*
++     * The netlink socket
++     */
++
++    static jint android_net_ethernet_initEthernetNative(JNIEnv *env,
++                                                        jobject clazz)
++    {
++        int ret = -1;
++
++	LOGI("==>%s",__FUNCTION__);
++        memset(&addr_msg, 0, sizeof(sockaddr_nl));
++        addr_msg.nl_family = AF_NETLINK;
++        memset(&addr_poll, 0, sizeof(sockaddr_nl));
++        addr_poll.nl_family = AF_NETLINK;
++        addr_poll.nl_pid = 0;//getpid();
++        addr_poll.nl_groups = RTMGRP_LINK | RTMGRP_IPV4_IFADDR;
++
++        /*
++         *Create connection to netlink socket
++         */
++        nl_socket_msg = socket(AF_NETLINK,SOCK_RAW,NETLINK_ROUTE);
++        if (nl_socket_msg <= 0) {
++            LOGE("Can not create netlink msg socket");
++            goto error;
++        }
++        if (bind(nl_socket_msg, (struct sockaddr *)(&addr_msg),
++                 sizeof(struct sockaddr_nl))) {
++            LOGE("Can not bind to netlink msg socket");
++            goto error;
++        }
++
++        nl_socket_poll = socket(AF_NETLINK,SOCK_RAW,NETLINK_ROUTE);
++        if (nl_socket_poll <= 0) {
++            LOGE("Can not create netlink poll socket");
++            goto error;
++        }
++
++        errno = 0;
++        if (bind(nl_socket_poll, (struct sockaddr *)(&addr_poll),
++                sizeof(struct sockaddr_nl))) {
++            LOGE("Can not bind to netlink poll socket,%s", strerror(errno));
++
++            goto error;
++        }
++
++        if ((ret = netlink_init_interfaces_list()) < 0) {
++            LOGE("Can not collect the interface list");
++            goto error;
++        }
++        LOGE("%s exited with success", __FUNCTION__);
++        return ret;
++
++    error:
++        LOGE("%s exited with error", __FUNCTION__);
++        if (nl_socket_msg > 0)
++            close(nl_socket_msg);
++        if (nl_socket_poll > 0)
++            close(nl_socket_poll);
++        return ret;
++    }
++
++    static jstring android_net_ethernet_getInterfaceName(JNIEnv *env,
++                                                         jobject clazz,
++                                                         jint index)
++    {
++        int i = 0;
++        interface_info_t *info;
++        LOGI("User ask for device name on %d, list:%X, total:%d",
++             index, (unsigned int)interfaces, total_int);
++        info = interfaces;
++        if (total_int != 0 && index <= (total_int - 1)) {
++            while (info) {
++                if (index == i) {
++                    LOGV("Found: %s", info->name);
++                    return env->NewStringUTF(info->name);
++                }
++                info = info->next;
++                i++;
++            }
++        }
++        LOGI("No device name found");
++        return env->NewStringUTF(NULL);
++    }
++
++
++    static jint android_net_ethernet_getInterfaceCnt()
++    {
++        return total_int;
++    }
++
++    static JNINativeMethod gEthernetMethods[] = {
++        {"waitForEvent", "()Ljava/lang/String;",
++         (void *)android_net_ethernet_waitForEvent},
++        {"getInterfaceName", "(I)Ljava/lang/String;",
++         (void *)android_net_ethernet_getInterfaceName},
++        {"initEthernetNative", "()I",
++         (void *)android_net_ethernet_initEthernetNative},
++        {"getInterfaceCnt","()I",
++         (void *)android_net_ethernet_getInterfaceCnt}
++    };
++
++    int register_android_net_ethernet_EthernetManager(JNIEnv* env)
++    {
++        jclass eth = env->FindClass(ETH_PKG_NAME);
++        LOGI("Loading ethernet jni class");
++        LOG_FATAL_IF(eth == NULL, "Unable to find class " ETH_PKG_NAME);
++        dhcpInfoFieldIds.dhcpInfoClass =
++            env->FindClass("android/net/DhcpInfo");
++
++        if (dhcpInfoFieldIds.dhcpInfoClass != NULL) {
++            dhcpInfoFieldIds.constructorId =
++                env->GetMethodID(dhcpInfoFieldIds.dhcpInfoClass,
++                                 "<init>", "()V");
++            dhcpInfoFieldIds.ipaddress =
++                env->GetFieldID(dhcpInfoFieldIds.dhcpInfoClass,
++                                "ipAddress", "I");
++            dhcpInfoFieldIds.gateway =
++                env->GetFieldID(dhcpInfoFieldIds.dhcpInfoClass,
++                                "gateway", "I");
++            dhcpInfoFieldIds.netmask =
++                env->GetFieldID(dhcpInfoFieldIds.dhcpInfoClass,
++                                "netmask", "I");
++            dhcpInfoFieldIds.dns1 =
++                env->GetFieldID(dhcpInfoFieldIds.dhcpInfoClass, "dns1", "I");
++            dhcpInfoFieldIds.dns2 =
++                env->GetFieldID(dhcpInfoFieldIds.dhcpInfoClass, "dns2", "I");
++            dhcpInfoFieldIds.serverAddress =
++                env->GetFieldID(dhcpInfoFieldIds.dhcpInfoClass,
++                                "serverAddress", "I");
++            dhcpInfoFieldIds.leaseDuration =
++                env->GetFieldID(dhcpInfoFieldIds.dhcpInfoClass,
++                                "leaseDuration", "I");
++        }
++
++        return AndroidRuntime::registerNativeMethods(env,
++                                                     ETH_PKG_NAME,
++                                                     gEthernetMethods,
++                                                     NELEM(gEthernetMethods));
++    }
++
++}
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 4105745..6aeeeaa 100755
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -35,6 +35,7 @@
+        <item><xliff:g id="id">mute</xliff:g></item>
+        <item><xliff:g id="id">volume</xliff:g></item>
+        <item><xliff:g id="id">wifi</xliff:g></item>
++       <item><xliff:g id="id">ethernet</xliff:g></item>
+        <item><xliff:g id="id">cdma_eri</xliff:g></item>
+        <item><xliff:g id="id">data_connection</xliff:g></item>
+        <item><xliff:g id="id">phone_evdo_signal</xliff:g></item>
+@@ -110,11 +111,12 @@
+          does not require auto-restore. -->
+     <!-- the 6th element indicates boot-time dependency-met value. -->
+     <string-array translatable="false" name="networkAttributes">
+-        <item>"wifi,1,1,1,-1,true"</item>
++        <item>"WIFI,1,1,1,-1,true"</item>
+         <item>"mobile,0,0,0,-1,true"</item>
+         <item>"mobile_mms,2,0,2,60000,true"</item>
+         <item>"mobile_supl,3,0,2,60000,true"</item>
+         <item>"mobile_hipri,5,0,3,60000,true"</item>
++        <item>"ethernet,9,9,1,-1,ture"</item>
+         <item>"mobile_fota,10,0,2,60000,true"</item>
+         <item>"mobile_ims,11,0,2,60000,true"</item>
+         <item>"mobile_cbs,12,0,2,60000,true"</item>
+@@ -137,6 +139,7 @@
+     <string-array translatable="false" name="radioAttributes">
+         <item>"1,1"</item>
+         <item>"0,1"</item>
++        <item>"9,1"</item>
+     </string-array>
+ 
+     <!-- Set of NetworkInfo.getType() that reflect data usage. -->
+diff --git a/ethernet/java/android/net/ethernet/EthernetDevInfo.aidl b/ethernet/java/android/net/ethernet/EthernetDevInfo.aidl
+new file mode 100644
+index 0000000..0f2c965
+--- /dev/null
++++ b/ethernet/java/android/net/ethernet/EthernetDevInfo.aidl
+@@ -0,0 +1,19 @@
++/**
++ * Copyright (c) 2010, The Android-x86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package android.net.ethernet;
++
++parcelable EthernetDevInfo;
+diff --git a/ethernet/java/android/net/ethernet/EthernetDevInfo.java b/ethernet/java/android/net/ethernet/EthernetDevInfo.java
+new file mode 100644
+index 0000000..058eb82
+--- /dev/null
++++ b/ethernet/java/android/net/ethernet/EthernetDevInfo.java
+@@ -0,0 +1,152 @@
++/*
++ * Copyright (C) 2010 The Android-X86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * Author: Yi Sun <beyounn@gmail.com>
++ */
++
++
++package android.net.ethernet;
++
++import android.net.ethernet.EthernetDevInfo;
++import android.os.Parcel;
++import android.os.Parcelable;
++import android.os.Parcelable.Creator;
++
++/**
++ * Describes the state of any Ethernet connection that is active or
++ * is in the process of being set up.
++ */
++
++public class EthernetDevInfo implements Parcelable {
++    /**
++     * The ethernet interface is configured by dhcp
++     */
++    public static final String ETHERNET_CONN_MODE_DHCP= "dhcp";
++    /**
++     * The ethernet interface is configured manually
++     */
++    public static final String ETHERNET_CONN_MODE_MANUAL = "manual";
++
++    private String dev_name;
++    private String ipaddr;
++    private String netmask;
++    private String route;
++    private String dns;
++    private String mode;
++
++    public EthernetDevInfo () {
++        dev_name = null;
++        ipaddr = null;
++        dns = null;
++        route = null;
++        netmask = null;
++        mode = ETHERNET_CONN_MODE_DHCP;
++    }
++
++    /**
++     * save interface name into the configuration
++     */
++    public void setIfName(String ifname) {
++        this.dev_name = ifname;
++    }
++
++    /**
++     * Returns the interface name from the saved configuration
++     * @return interface name
++     */
++    public String getIfName() {
++        return this.dev_name;
++    }
++
++    public void setIpAddress(String ip) {
++        this.ipaddr = ip;
++    }
++
++    public String getIpAddress( ) {
++        return this.ipaddr;
++    }
++
++    public void setNetMask(String ip) {
++        this.netmask = ip;
++    }
++
++    public String getNetMask( ) {
++        return this.netmask;
++    }
++
++    public void setRouteAddr(String route) {
++        this.route = route;
++    }
++
++    public String getRouteAddr() {
++        return this.route;
++    }
++
++    public void setDnsAddr(String dns) {
++        this.dns = dns;
++    }
++
++    public String getDnsAddr( ) {
++        return this.dns;
++    }
++
++    /**
++     * Set ethernet configuration mode
++     * @param mode {@code ETHERNET_CONN_MODE_DHCP} for dhcp {@code ETHERNET_CONN_MODE_MANUAL} for manual configure
++     * @return
++     */
++    public boolean setConnectMode(String mode) {
++        if (mode.equals(ETHERNET_CONN_MODE_DHCP) || mode.equals(ETHERNET_CONN_MODE_MANUAL)) {
++            this.mode = mode;
++            return true;
++        }
++        return false;
++    }
++
++    public String getConnectMode() {
++        return this.mode;
++    }
++
++    public int describeContents() {
++        return 0;
++    }
++
++    public void writeToParcel(Parcel dest, int flags) {
++        dest.writeString(this.dev_name);
++        dest.writeString(this.ipaddr);
++        dest.writeString(this.netmask);
++        dest.writeString(this.route);
++        dest.writeString(this.dns);
++        dest.writeString(this.mode);
++    }
++
++    /** Implement the Parcelable interface {@hide} */
++    public static final Creator<EthernetDevInfo> CREATOR = new Creator<EthernetDevInfo>() {
++        public EthernetDevInfo createFromParcel(Parcel in) {
++            EthernetDevInfo info = new EthernetDevInfo();
++            info.setIfName(in.readString());
++            info.setIpAddress(in.readString());
++            info.setNetMask(in.readString());
++            info.setRouteAddr(in.readString());
++            info.setDnsAddr(in.readString());
++            info.setConnectMode(in.readString());
++            return info;
++        }
++
++        public EthernetDevInfo[] newArray(int size) {
++            return new EthernetDevInfo[size];
++        }
++    };
++}
+diff --git a/ethernet/java/android/net/ethernet/EthernetManager.java b/ethernet/java/android/net/ethernet/EthernetManager.java
+new file mode 100644
+index 0000000..b763b17
+--- /dev/null
++++ b/ethernet/java/android/net/ethernet/EthernetManager.java
+@@ -0,0 +1,181 @@
++/*
++ * Copyright (C) 2010 The Android-X86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * Author: Yi Sun <beyounn@gmail.com>
++ */
++
++package android.net.ethernet;
++
++import java.util.List;
++import android.annotation.SdkConstant;
++import android.annotation.SdkConstant.SdkConstantType;
++import android.os.Handler;
++import android.os.RemoteException;
++import android.util.Slog;
++
++/**
++ * This class provides the primary API for managing all aspects of Ethernet
++ * connectivity. Get an instance of this class by calling
++ * {@link android.content.Context#getSystemService(String) Context.getSystemService(Context.ETHERNET_SERVICE)}.
++ *
++ * This is the API to use when performing Ethernet specific operations. To
++ * perform operations that pertain to network connectivity at an abstract
++ * level, use {@link android.net.ConnectivityManager}.
++ */
++public class EthernetManager {
++    public static final String TAG = "EthernetManager";
++    public static final int ETHERNET_DEVICE_SCAN_RESULT_READY = 0;
++    public static final String ETHERNET_STATE_CHANGED_ACTION =
++            "android.net.ethernet.ETHERNET_STATE_CHANGED";
++    public static final String NETWORK_STATE_CHANGED_ACTION =
++            "android.net.ethernet.STATE_CHANGE";
++
++    public static final String EXTRA_NETWORK_INFO = "networkInfo";
++    public static final String EXTRA_ETHERNET_STATE = "ETHERNET_state";
++    public static final String EXTRA_PREVIOUS_ETHERNET_STATE = "previous_ETHERNET_state";
++    /**
++     * The lookup key for a {@link android.net.LinkProperties} object associated with the
++     * Ethernet network. Retrieve with
++     * {@link android.content.Intent#getParcelableExtra(String)}.
++     * @hide
++     */
++    public static final String EXTRA_LINK_PROPERTIES = "linkProperties";
++
++    /**
++     * The lookup key for a {@link android.net.LinkCapabilities} object associated with the
++     * Ethernet network. Retrieve with
++     * {@link android.content.Intent#getParcelableExtra(String)}.
++     * @hide
++     */
++    public static final String EXTRA_LINK_CAPABILITIES = "linkCapabilities";
++
++    public static final int ETHERNET_STATE_UNKNOWN = 0;
++    public static final int ETHERNET_STATE_DISABLED = 1;
++    public static final int ETHERNET_STATE_ENABLED = 2;
++
++    /** @hide */
++    public static final int DATA_ACTIVITY_NONE         = 0x00;
++    /** @hide */
++    public static final int DATA_ACTIVITY_IN           = 0x01;
++    /** @hide */
++    public static final int DATA_ACTIVITY_OUT          = 0x02;
++    /** @hide */
++    public static final int DATA_ACTIVITY_INOUT        = 0x03;
++
++    IEthernetManager mService;
++    Handler mHandler;
++
++    public EthernetManager(IEthernetManager service, Handler handler) {
++        Slog.i(TAG, "Init Ethernet Manager, service: " +service);
++        mService = service;
++        mHandler = handler;
++    }
++
++    /**
++     * check if the ethernet service has been configured.
++     * @return {@code true} if configured {@code false} otherwise
++     */
++    public boolean isConfigured() {
++        try {
++            return mService.isConfigured();
++        } catch (RemoteException e) {
++            Slog.i(TAG, "Can not check eth config state");
++        }
++        return false;
++    }
++
++    /**
++     * Return the saved ethernet configuration
++     * @return ethernet interface configuration on success, {@code null} on failure
++     */
++    public EthernetDevInfo getSavedConfig() {
++        try {
++            return mService.getSavedConfig();
++        } catch (RemoteException e) {
++            Slog.i(TAG, "Can not get eth config");
++        }
++        return null;
++    }
++
++    /**
++     * update a ethernet interface information
++     * @param info  the interface infomation
++     */
++    public void updateDevInfo(EthernetDevInfo info) {
++        try {
++            mService.updateDevInfo(info);
++        } catch (RemoteException e) {
++            Slog.i(TAG, "Can not update ethernet device info");
++        }
++    }
++
++    /**
++     * get all the ethernet device names
++     * @return interface name list on success, {@code null} on failure
++     */
++    public String[] getDeviceNameList() {
++        try {
++            return mService.getDeviceNameList();
++        } catch (RemoteException e) {
++            return null;
++        }
++    }
++    /**
++     * Enable or Disable a ethernet service
++     * @param enable {@code true} to enable, {@code false} to disable
++     * @hide
++     */
++    public void setEnabled(boolean enable) {
++        try {
++            mService.setState(enable ? ETHERNET_STATE_ENABLED:ETHERNET_STATE_DISABLED);
++        } catch (RemoteException e) {
++            Slog.i(TAG,"Can not set new state");
++        }
++    }
++
++    /**
++     * Get ethernet service state
++     * @return the state of the ethernet service
++     */
++    public int getState( ) {
++        try {
++            return mService.getState();
++        } catch (RemoteException e) {
++            return 0;
++        }
++    }
++
++    /**
++     * get the number of ethernet interfaces in the system
++     * @return the number of ethernet interfaces
++     */
++    public int getTotalInterface() {
++        try {
++            return mService.getTotalInterface();
++        } catch (RemoteException e) {
++            return 0;
++        }
++    }
++
++    /**
++     * @hide
++     */
++    public void setDefaultConf() {
++        try {
++            mService.setMode(EthernetDevInfo.ETHERNET_CONN_MODE_DHCP);
++        } catch (RemoteException e) {
++        }
++    }
++}
+diff --git a/ethernet/java/android/net/ethernet/EthernetMonitor.java b/ethernet/java/android/net/ethernet/EthernetMonitor.java
+new file mode 100644
+index 0000000..fb4b1d9
+--- /dev/null
++++ b/ethernet/java/android/net/ethernet/EthernetMonitor.java
+@@ -0,0 +1,134 @@
++/*
++ * Copyright (C) 2010 The Android-X86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * Author: Yi Sun <beyounn@gmail.com>
++ */
++
++package android.net.ethernet;
++
++import java.util.regex.Matcher;
++
++import android.net.NetworkInfo;
++import android.util.Config;
++import android.util.Slog;
++import java.util.StringTokenizer;
++
++/**
++ * Listens for events from kernel, and passes them on
++ * to the {@link EtherentStateTracker} for handling. Runs in its own thread.
++ *
++ * @hide
++ */
++public class EthernetMonitor {
++    private static final String TAG = "EthernetMonitor";
++    private static final int CONNECTED = 1;
++    private static final int DISCONNECTED = 2;
++    private static final int PHYUP = 3;
++    private static final String connectedEvent = "CONNECTED";
++    private static final String disconnectedEvent = "DISCONNECTED";
++    private static final int ADD_ADDR = 20;
++    private static final int RM_ADDR = 21;
++    private static final int NEW_LINK = 16;
++    private static final int DEL_LINK = 17;
++    private static final boolean localLOGV = false;
++
++    private EthernetStateTracker mTracker;
++
++    public EthernetMonitor(EthernetStateTracker tracker) {
++        mTracker = tracker;
++    }
++
++    public void startMonitoring() {
++        new MonitorThread().start();
++    }
++
++    class MonitorThread extends Thread {
++        public MonitorThread() {
++            super("EthMonitor");
++        }
++
++        public void run() {
++            //noinspection InfiniteLoopStatement
++            for (;;) {
++                int index;
++                int i;
++                int cmd;
++                String dev;
++
++                if (localLOGV) Slog.v(TAG, "go poll events");
++
++                String eventName = EthernetNative.waitForEvent();
++
++                if (eventName == null) {
++                    continue;
++                }
++
++                if (localLOGV) Slog.v(TAG, "get event " + eventName);
++
++                /*
++                 * Map event name into event enum
++                 */
++                i = 0;
++                while (i < eventName.length()) {
++                    index = eventName.substring(i).indexOf(":");
++                    if (index == -1)
++                        break;
++                    dev = eventName.substring(i, index);
++                    i += index + 1;
++                    index = eventName.substring(i).indexOf(":");
++                    if (index == -1)
++                        break;
++                    cmd = Integer.parseInt(eventName.substring(i, i+index));
++                    i += index + 1;
++                    if (localLOGV) Slog.v(TAG, "dev: " + dev + " ev " + cmd);
++                    switch (cmd) {
++                        case DEL_LINK:
++                            handleEvent(dev, DISCONNECTED);
++                            break;
++                        case ADD_ADDR:
++                            handleEvent(dev, CONNECTED);
++                            break;
++                        case NEW_LINK:
++                            handleEvent(dev, PHYUP);
++                            break;
++                    }
++                }
++            }
++        }
++
++        /**
++         * Handle all supplicant events except STATE-CHANGE
++         * @param event the event type
++         * @param remainder the rest of the string following the
++         * event name and &quot;&#8195;&#8212;&#8195;&quot;
++         */
++        void handleEvent(String ifname,int event) {
++            switch (event) {
++                case DISCONNECTED:
++                    mTracker.notifyStateChange(ifname,NetworkInfo.DetailedState.DISCONNECTED);
++                    break;
++                case CONNECTED:
++                    mTracker.notifyStateChange(ifname,NetworkInfo.DetailedState.CONNECTED);
++                    break;
++                case PHYUP:
++                    mTracker.notifyPhyConnected(ifname);
++                    break;
++                default:
++                    mTracker.notifyStateChange(ifname,NetworkInfo.DetailedState.FAILED);
++                    break;
++            }
++        }
++    }
++}
+diff --git a/ethernet/java/android/net/ethernet/EthernetNative.java b/ethernet/java/android/net/ethernet/EthernetNative.java
+new file mode 100644
+index 0000000..7f3a083
+--- /dev/null
++++ b/ethernet/java/android/net/ethernet/EthernetNative.java
+@@ -0,0 +1,30 @@
++/*
++ * Copyright (C) 2010 The Android-X86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * Author: Yi Sun <beyounn@gmail.com>
++ */
++
++package android.net.ethernet;
++
++/**
++ * Native calls for sending requests to the kernel,
++ * {@hide}
++ */
++public class EthernetNative {
++    public native static String getInterfaceName(int i);
++    public native static int getInterfaceCnt();
++    public native static int initEthernetNative();
++    public native static String waitForEvent();
++}
+diff --git a/ethernet/java/android/net/ethernet/EthernetStateTracker.java b/ethernet/java/android/net/ethernet/EthernetStateTracker.java
+new file mode 100644
+index 0000000..9b78de6
+--- /dev/null
++++ b/ethernet/java/android/net/ethernet/EthernetStateTracker.java
+@@ -0,0 +1,509 @@
++/*
++ * Copyright (C) 2010 The Android-X86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * Author: Yi Sun <beyounn@gmail.com>
++ */
++
++package android.net.ethernet;
++
++import java.net.InetAddress;
++import java.net.UnknownHostException;
++
++import android.R;
++import android.app.Notification;
++import android.app.NotificationManager;
++import android.app.PendingIntent;
++import android.bluetooth.BluetoothHeadset;
++import android.content.Context;
++import android.content.Intent;
++import android.content.IntentFilter;
++import android.content.BroadcastReceiver;
++import android.net.LinkCapabilities;
++import android.net.LinkProperties;
++import android.net.ConnectivityManager;
++import android.net.DhcpInfoInternal;
++import android.net.NetworkStateTracker;
++import android.net.NetworkUtils;
++import android.net.LinkCapabilities;
++import android.net.NetworkInfo;
++import android.net.LinkProperties;
++import android.net.NetworkInfo.DetailedState;
++import android.os.Handler;
++import android.os.HandlerThread;
++import android.os.Looper;
++import android.os.Message;
++import android.os.Parcel;
++import android.os.SystemProperties;
++import android.util.*;
++
++import java.util.concurrent.atomic.AtomicBoolean;
++
++/**
++ * Track the state of Ethernet connectivity. All event handling is done here,
++ * and all changes in connectivity state are initiated here.
++ *
++ * @hide
++ */
++
++public class EthernetStateTracker extends Handler implements NetworkStateTracker {
++    private static final String TAG                                 = "EthernetStateTracker";
++    public static final int EVENT_DHCP_START                        = 0;
++    public static final int EVENT_INTERFACE_CONFIGURATION_SUCCEEDED = 1;
++    public static final int EVENT_INTERFACE_CONFIGURATION_FAILED    = 2;
++    public static final int EVENT_HW_CONNECTED                      = 3;
++    public static final int EVENT_HW_DISCONNECTED                   = 4;
++    public static final int EVENT_HW_PHYCONNECTED                   = 5;
++    private static final int NOTIFY_ID                              = 6;
++    private static final boolean localLOGV = true;
++
++    private AtomicBoolean mTeardownRequested = new AtomicBoolean(false);
++    private AtomicBoolean mPrivateDnsRouteSet = new AtomicBoolean(false);
++    private AtomicBoolean mDefaultRouteSet = new AtomicBoolean(false);
++
++    private EthernetManager mEM;
++    private boolean mServiceStarted;
++    private NetworkInfo mNetworkInfo;
++
++    private boolean mStackConnected;
++    private boolean mHWConnected;
++    private boolean mInterfaceStopped;
++    private DhcpHandler mDhcpTarget;
++    private String mInterfaceName ;
++    private DhcpInfoInternal mDhcpInfo;
++    private EthernetMonitor mMonitor;
++    private String[] sDnsPropNames;
++    private boolean mStartingDhcp;
++    private NotificationManager mNotificationManager;
++    private Notification mNotification;
++    private Handler mTrackerTarget;
++
++    private BroadcastReceiver mEthernetStateReceiver;
++
++    /* For sending events to connectivity service handler */
++    private Handler mCsHandler;
++	private Context mContext;
++
++    public EthernetStateTracker(Context context, Handler target) {
++        mNetworkInfo = new NetworkInfo(ConnectivityManager.TYPE_ETHERNET, 0, "ETH", "");
++        if (localLOGV) Slog.v(TAG, "Starts...");
++
++        if (EthernetNative.initEthernetNative() != 0) {
++            Slog.e(TAG,"Can not init ethernet device layers");
++            return;
++        }
++
++        if (localLOGV) Slog.v(TAG,"Successed");
++        mServiceStarted = true;
++        HandlerThread dhcpThread = new HandlerThread("DHCP Handler Thread");
++        dhcpThread.start();
++        mDhcpTarget = new DhcpHandler(dhcpThread.getLooper(), this);
++        mMonitor = new EthernetMonitor(this);
++        mDhcpInfo = new DhcpInfoInternal();
++    }
++
++    /**
++     * Stop etherent interface
++     * @param suspend {@code false} disable the interface {@code true} only reset the connection without disable the interface
++     * @return true
++     */
++    public boolean stopInterface(boolean suspend) {
++        if (mEM != null) {
++            EthernetDevInfo info = mEM.getSavedConfig();
++            if (info != null && mEM.isConfigured()) {
++                synchronized (mDhcpTarget) {
++                    mInterfaceStopped = true;
++                    if (localLOGV) Slog.i(TAG, "stop dhcp and interface");
++                    mDhcpTarget.removeMessages(EVENT_DHCP_START);
++                    String ifname = info.getIfName();
++
++                    if (!NetworkUtils.stopDhcp(ifname)) {
++                        if (localLOGV) Slog.w(TAG, "Could not stop DHCP");
++                    }
++                    NetworkUtils.resetConnections(ifname, NetworkUtils.RESET_ALL_ADDRESSES);
++                    if (!suspend)
++                        NetworkUtils.disableInterface(ifname);
++                }
++            }
++        }
++        return true;
++    }
++
++    private boolean configureInterface(EthernetDevInfo info) throws UnknownHostException {
++        mStackConnected = false;
++        mHWConnected = false;
++        mInterfaceStopped = false;
++        mStartingDhcp = true;
++        if (info.getConnectMode().equals(EthernetDevInfo.ETHERNET_CONN_MODE_DHCP)) {
++            if (localLOGV) Slog.i(TAG, "trigger dhcp for device " + info.getIfName());
++            sDnsPropNames = new String[] {
++                "dhcp." + mInterfaceName + ".dns1",
++                "dhcp." + mInterfaceName + ".dns2"
++             };
++
++            mDhcpTarget.sendEmptyMessage(EVENT_DHCP_START);
++        } else {
++/* HFM
++            int event;
++            sDnsPropNames = new String[] {
++                "net." + mInterfaceName + ".dns1",
++                "net." + mInterfaceName + ".dns2"
++             };
++            mDhcpInfo.ipAddress = lookupHost(info.getIpAddress());
++            mDhcpInfo.gateway = lookupHost(info.getRouteAddr());
++            mDhcpInfo.netmask = lookupHost(info.getNetMask());
++            mDhcpInfo.dns1 = lookupHost(info.getDnsAddr());
++            mDhcpInfo.dns2 = 0;
++
++            if (localLOGV) Slog.i(TAG, "set ip manually " + mDhcpInfo.toString());
++            NetworkUtils.removeDefaultRoute(info.getIfName());
++            if (NetworkUtils.configureInterface(info.getIfName(), mDhcpInfo)) {
++                event = EVENT_INTERFACE_CONFIGURATION_SUCCEEDED;
++                SystemProperties.set("net.dns1", info.getDnsAddr());
++		SystemProperties.set("net." + info.getIfName() + ".dns1", info.getDnsAddr());
++		SystemProperties.set("net." + info.getIfName() + ".dns2", "0.0.0.0");
++                if (localLOGV) Slog.v(TAG, "Static IP configuration succeeded");
++            } else {
++                event = EVENT_INTERFACE_CONFIGURATION_FAILED;
++                if (localLOGV) Slog.w(TAG, "Static IP configuration failed");
++            }
++            this.sendEmptyMessage(event);
++*/
++        }
++        return true;
++    }
++
++    /**
++     * reset ethernet interface
++     * @return true
++     * @throws UnknownHostException
++     */
++    public boolean resetInterface()  throws UnknownHostException{
++        /*
++         * This will guide us to enabled the enabled device
++         */
++        if (mEM != null) {
++            EthernetDevInfo info = mEM.getSavedConfig();
++            if (info != null && mEM.isConfigured()) {
++                synchronized (this) {
++                    mInterfaceName = info.getIfName();
++                    if (localLOGV) Slog.i(TAG, "reset device " + mInterfaceName);
++                    NetworkUtils.resetConnections(mInterfaceName, NetworkUtils.RESET_ALL_ADDRESSES);
++                     // Stop DHCP
++                    if (mDhcpTarget != null) {
++                        mDhcpTarget.removeMessages(EVENT_DHCP_START);
++                    }
++                    if (!NetworkUtils.stopDhcp(mInterfaceName)) {
++                        if (localLOGV) Slog.w(TAG, "Could not stop DHCP");
++                    }
++                    configureInterface(info);
++                }
++            }
++        }
++        return true;
++    }
++
++/* HFM
++    @Override
++    public String[] getNameServers() {
++        return getNameServerList(sDnsPropNames);
++    }
++*/
++    @Override
++    public String getTcpBufferSizesPropName() {
++        return "net.tcp.buffersize.default";
++    }
++
++    public void StartPolling() {
++        mMonitor.startMonitoring();
++    }
++    @Override
++    public boolean isAvailable() {
++        // Only say available if we have interfaces and user did not disable us.
++        return ((mEM.getTotalInterface() != 0) && (mEM.getState() != EthernetManager.ETHERNET_STATE_DISABLED));
++    }
++
++    @Override
++    public boolean reconnect() {
++        try {
++            synchronized (this) {
++                if (mHWConnected && mStackConnected)
++                    return true;
++            }
++            if (mEM.getState() != EthernetManager.ETHERNET_STATE_DISABLED) {
++                // maybe this is the first time we run, so set it to enabled
++                mEM.setEnabled(true);
++                if (!mEM.isConfigured()) {
++                    mEM.setDefaultConf();
++                }
++                return resetInterface();
++            }
++        } catch (UnknownHostException e) {
++            e.printStackTrace();
++        }
++        return false;
++
++    }
++
++    @Override
++    public boolean setRadio(boolean turnOn) {
++        return false;
++    }
++
++    @Override
++    public void startMonitoring(Context context, Handler target) {
++        if (localLOGV) Slog.v(TAG,"start to monitor the ethernet devices");
++        if (mServiceStarted) {
++            mEM = (EthernetManager)context.getSystemService(Context.ETHERNET_SERVICE);
++			mContext = context;
++	        mCsHandler = target;
++
++///		    IntentFilter filter = new IntentFilter();
++///		    filter.addAction(EthernetManager.NETWORK_STATE_CHANGED_ACTION);
++
++///		    mEthernetStateReceiver = new EthernetStateReceiver();
++///		    mContext.registerReceiver(mEthernetStateReceiver, filter);
++            int state = mEM.getState();
++            if (state != mEM.ETHERNET_STATE_DISABLED) {
++                if (state == mEM.ETHERNET_STATE_UNKNOWN) {
++                    // maybe this is the first time we run, so set it to enabled
++                    mEM.setEnabled(mEM.getDeviceNameList() != null);
++                } else {
++                    try {
++                        resetInterface();
++                    } catch (UnknownHostException e) {
++                        Slog.e(TAG, "Wrong ethernet configuration");
++                    }
++                }
++            }
++        }
++    }
++
++/* HFM
++    @Override
++    public int startUsingNetworkFeature(String feature, int callingPid, int callingUid) {
++        return 0;
++    }
++
++    @Override
++    public int stopUsingNetworkFeature(String feature, int callingPid, int callingUid) {
++        return 0;
++    }
++*/
++    @Override
++    public boolean teardown() {
++        return (mEM != null) ? stopInterface(false) : false;
++    }
++
++    private void postNotification(int event) {
++        Message msg = mCsHandler.obtainMessage(EVENT_STATE_CHANGED, new NetworkInfo(mNetworkInfo));
++        msg.sendToTarget();
++    }
++
++    private void setState(boolean state, int event) {
++        if (mNetworkInfo.isConnected() != state) {
++            if (state) {
++                mNetworkInfo.setDetailedState(DetailedState.CONNECTED, null, null);
++            } else {
++                mNetworkInfo.setDetailedState(DetailedState.DISCONNECTED, null, null);
++                stopInterface(true);
++            }
++            mNetworkInfo.setIsAvailable(state);
++            postNotification(event);
++        }
++    }
++
++    public void handleMessage(Message msg) {
++
++        synchronized (this) {
++            switch (msg.what) {
++            case EVENT_INTERFACE_CONFIGURATION_SUCCEEDED:
++                if (localLOGV) Slog.i(TAG, "received configured succeeded, stack=" + mStackConnected + " HW=" + mHWConnected);
++                mStackConnected = true;
++                if (mHWConnected)
++                    setState(true, msg.what);
++                break;
++            case EVENT_INTERFACE_CONFIGURATION_FAILED:
++                mStackConnected = false;
++                //start to retry ?
++                break;
++            case EVENT_HW_CONNECTED:
++                if (localLOGV) Slog.i(TAG, "received HW connected, stack=" + mStackConnected + " HW=" + mHWConnected);
++                mHWConnected = true;
++                if (mStackConnected)
++                    setState(true, msg.what);
++                break;
++            case EVENT_HW_DISCONNECTED:
++                if (localLOGV) Slog.i(TAG, "received disconnected events, stack=" + mStackConnected + " HW=" + mHWConnected);
++                setState(mHWConnected = false, msg.what);
++                break;
++            case EVENT_HW_PHYCONNECTED:
++                if (localLOGV) Slog.i(TAG, "interface up event, kick off connection request");
++                if (!mStartingDhcp) {
++                    int state = mEM.getState();
++                    if (state != mEM.ETHERNET_STATE_DISABLED) {
++                        EthernetDevInfo info = mEM.getSavedConfig();
++                        if (info != null && mEM.isConfigured()) {
++                            try {
++                                configureInterface(info);
++                            } catch (UnknownHostException e) {
++                                 // TODO Auto-generated catch block
++                                 //e.printStackTrace();
++                                 Slog.e(TAG, "Cannot configure interface");
++                            }
++                        }
++                    }
++                }
++                break;
++            }
++        }
++    }
++    private class DhcpHandler extends Handler {
++         public DhcpHandler(Looper looper, Handler target) {
++             super(looper);
++             mTrackerTarget = target;
++         }
++
++         public void handleMessage(Message msg) {
++             int event;
++
++             switch (msg.what) {
++                 case EVENT_DHCP_START:
++                     synchronized (mDhcpTarget) {
++                         if (!mInterfaceStopped) {
++                             if (localLOGV) Slog.d(TAG, "DhcpHandler: DHCP request started");
++                             if (NetworkUtils.runDhcp(mInterfaceName, mDhcpInfo)) {
++                                 event = EVENT_INTERFACE_CONFIGURATION_SUCCEEDED;
++                                 if (localLOGV) Slog.d(TAG, "DhcpHandler: DHCP request succeeded: " + mDhcpInfo.toString());
++                             } else {
++                                 event = EVENT_INTERFACE_CONFIGURATION_FAILED;
++                                 Slog.e(TAG, "DhcpHandler: DHCP request failed: " + NetworkUtils.getDhcpError());
++                             }
++                             mTrackerTarget.sendEmptyMessage(event);
++                         } else {
++                             mInterfaceStopped = false;
++                         }
++                         mStartingDhcp = false;
++                     }
++                     break;
++             }
++         }
++    }
++
++    public void notifyPhyConnected(String ifname) {
++        if (localLOGV) Slog.v(TAG, "report interface is up for " + ifname);
++        synchronized(this) {
++            this.sendEmptyMessage(EVENT_HW_PHYCONNECTED);
++        }
++    }
++
++    public void notifyStateChange(String ifname,DetailedState state) {
++        if (localLOGV) Slog.i(TAG, "report new state " + state.toString() + " on dev " + ifname);
++        if (ifname.equals(mInterfaceName)) {
++            if (localLOGV) Slog.v(TAG, "update network state tracker");
++            synchronized(this) {
++                this.sendEmptyMessage(state.equals(DetailedState.CONNECTED)
++                    ? EVENT_HW_CONNECTED : EVENT_HW_DISCONNECTED);
++            }
++        }
++    }
++
++    private static int lookupHost(String hostname) {
++        InetAddress inetAddress;
++        try {
++            inetAddress = InetAddress.getByName(hostname);
++        } catch (UnknownHostException e) {
++            return -1;
++        }
++        byte[] addrBytes;
++        int addr;
++        addrBytes = inetAddress.getAddress();
++        addr = ((addrBytes[3] & 0xff) << 24)
++                | ((addrBytes[2] & 0xff) << 16)
++                | ((addrBytes[1] & 0xff) << 8)
++                |  (addrBytes[0] & 0xff);
++        return addr;
++    }
++
++    public void setDependencyMet(boolean met) {
++        // not supported on this network
++    }
++    /*HFM stubs */
++    public void setUserDataEnable(boolean enabled) {
++       Slog.w(TAG, "ignoring setUserDataEnable(" + enabled + ")");
++    }
++
++    public void setDataEnable(boolean enabled) {
++    }
++    public void setPolicyDataEnable(boolean enabled) {
++    }
++    public void setTeardownRequested(boolean isRequested) {
++        mTeardownRequested.set(isRequested);
++    }
++
++    public boolean isTeardownRequested() {
++        return mTeardownRequested.get();
++    }
++    /**
++     * Check if private DNS route is set for the network
++     */
++    public boolean isPrivateDnsRouteSet() {
++        return mPrivateDnsRouteSet.get();
++    }
++
++    /**
++     * Set a flag indicating private DNS route is set
++     */
++    public void privateDnsRouteSet(boolean enabled) {
++        mPrivateDnsRouteSet.set(enabled);
++    }
++
++    /**
++     * Fetch NetworkInfo for the network
++     */
++    public NetworkInfo getNetworkInfo() {
++        return new NetworkInfo(mNetworkInfo);
++    }
++
++    /**
++     * Fetch LinkProperties for the network
++     */
++    public LinkProperties getLinkProperties() {
++        return new LinkProperties();
++    }
++
++    /**
++     * A capability is an Integer/String pair, the capabilities
++     * are defined in the class LinkSocket#Key.
++     *
++     * @return a copy of this connections capabilities, may be empty but never null.
++     */
++    public LinkCapabilities getLinkCapabilities() {
++        return new LinkCapabilities();
++    }
++
++    /**
++     * Check if default route is set
++     */
++    public boolean isDefaultRouteSet() {
++        return mDefaultRouteSet.get();
++    }
++
++    /**
++     * Set a flag indicating default route is set for the network
++     */
++    public void defaultRouteSet(boolean enabled) {
++        mDefaultRouteSet.set(enabled);
++    }
++}
+diff --git a/ethernet/java/android/net/ethernet/IEthernetManager.aidl b/ethernet/java/android/net/ethernet/IEthernetManager.aidl
+new file mode 100644
+index 0000000..ce6e852
+--- /dev/null
++++ b/ethernet/java/android/net/ethernet/IEthernetManager.aidl
+@@ -0,0 +1,30 @@
++/**
++ * Copyright (c) 2010, The Android-x86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package android.net.ethernet;
++import android.net.ethernet.EthernetDevInfo;
++
++interface IEthernetManager
++{
++    String[] getDeviceNameList();
++    void setState(int state);
++    int getState( );
++    void updateDevInfo(in EthernetDevInfo info);
++    boolean isConfigured();
++    EthernetDevInfo getSavedConfig();
++    int getTotalInterface();
++    void setMode(String mode);
++}
+diff --git a/packages/SystemUI/res/drawable-hdpi/connect_creating.png b/packages/SystemUI/res/drawable-hdpi/connect_creating.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..a70572ccb3fb058a10ff9d84f49d20178bdead1e
+GIT binary patch
+literal 429
+zcmV;e0aE^nP)<h;3K|Lk000e1NJLTq000~S001Tk1^@s6*X;XW0000PbVXQnQ*UN;
+zcVTj606}DLVr3vnZDD6+Qe|Oed2z{QJOBUzPf0{URCwC#S3zooFckgK3L=Ogxab+W
+zbSb@v2be?60bIK18R|yx8r_Q^qUf&)lc9AIO(z-YfPW(<eqVm_-up@r5%vrVc8&w^
+z`2k<<Ny_tFiQ3aNLEra~rYX?^jG{>CxvuM=u50}YJ<n5qwrLuDKpNvX!Y~YwBnc7C
+zS5<{ZNkhSw+x1YEQbN!(I&^46his*m1+MGfXp)WvLBOt?fai*+_p14QZ}17e@82xM
+zaUAm%@@jV5QW|j_Uo}{kC9dgG1yGiVI=VE%(xNDkyHA#7t2`h-ziAev*{tyO>w}So
+zdu!Xa%sXkdqE4ZGhG7^oM%uQ0HFbK=T}ZUWMp;UMIk>1(YyqMQOXp({=APb>99}A8
+zCW_`xF+OL7zgEA{CC=mIGQL`=gh*0AlqDz{!(+_*Pp!<5@X0;IA;<sW0r>9$zXcco
+XDnyO}GjU2<00000NkvXXu0mjf`klQQ
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-hdpi/connect_established.png b/packages/SystemUI/res/drawable-hdpi/connect_established.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..cd8c435ab140991b191b725b046c4333a91ec446
+GIT binary patch
+literal 5009
+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
+bAGUu2FR&hW7e%mB00000NkvXXu0mjffx}xn
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-hdpi/connect_no.png b/packages/SystemUI/res/drawable-hdpi/connect_no.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..ea63cdd589b194f53235099e06441941c02da21e
+GIT binary patch
+literal 438
+zcmV;n0ZIOeP)<h;3K|Lk000e1NJLTq000~S001Tk1^@s6*X;XW0000PbVXQnQ*UN;
+zcVTj606}DLVr3vnZDD6+Qe|Oed2z{QJOBUzSV=@dRCwC#mpuxDKoEsjjUs{wg0+XR
+z^cI#L(9*^;*a#j*Y(&uwBWw_}CNsMxB;YjS@0*!@pQ8rnoP9G)_T{()|6lN?a#LBB
+zC~Ggv!p3oAd7c|uf>9Kqt{aAdbzP@lq33z%Yx};}7lfGSnN8Eg(lj+>=i9dBr<w-D
+z_U-zpOTiGZMi+;taJXh_n#^_GCnn)o5CrS?tsoWXIF6a``%j73wvDTh3iMGG=$2A}
+zPLkxoVAC}G6_<x=s0uWeOY;n%>$>J5*`g>osX_|SRaJ2?jaUj{ATXb7QfOfT5r*OF
+zNXxPw9)Nw3w5(HFf_s;Oun?C`3aKCk=&eh)0qeML<)I+71RhKUdK-@8;7zk{i|T6+
+zB`9kV7U<Kah3cSH5~KjFJf6UvU=AwK%7QR4gd<-8EgNNk%sVIFFrR=jptCGfs?fOp
+g4==%=7rYBF0D~6DQDM)#O8@`>07*qoM6N<$f`|#ep8x;=
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-hdpi/stat_sys_ethernet_connected.png b/packages/SystemUI/res/drawable-hdpi/stat_sys_ethernet_connected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..da4e16286df16f15cfc7636c949072ddb79f521d
+GIT binary patch
+literal 1039
+zcmV+q1n~QbP)<h;3K|Lk000e1NJLTq0015U000{Z1^@s6YyCeF00004b3#c}2nYxW
+zd<bNS00009a7bBm000ie000ie0hKEb8vp<Uu}MThR7i=<mfedRWfaDLXJ(R}B-=Hc
+zY-@`y@dF87ScSc)LPeqAy}42RC%mn9-iTQ6uMj~fL<RA}59&oP1SwPs;*=^4w#(LT
+znz-3!lFY~PVrG&_GRY=4;se7>=6%omocEdYJ|`wn1B3_x{}BYR0S^cPJz=gDU$SK0
+zA}HX;Tx%`x6!5lKT&nKMR=$8A28akECK~#PDxjzsU>MO(2pAw3{jQFV9`FP31@OpP
+zgSZS_C_gE$6yLb~%o=e3<bmF2A9pq2Ylvi96$W7BOWd*RdutO9oEw-X;s=q+>kup8
+zi_%Unb`tFR-uT%tCpDBNmee&%m;{K*B*twybboG!Q!|sB!uGBV?E2MWGF+@6qx%zL
+zAu61UK#BRvR$u_^0xvvntG$uhspn$M#3YHU&KypEIK5*7IG-!>;Z9Aqa<&8-qE-Ra
+zBk+bu;Hv@TfD(!ZzkJd|5Wk~=nIj)~<N$M4Et%2IA4~*EWZNiTXw-AH`Z(nzSu?(}
+za0;+m4iB$2k5g)m>Ab<TAr&exIG*en;v<(XgjM0T97<J&n^h@!F6xg65yUiM^YnD_
+zj(U?CN(QDx88|m^Th2nVLajbdvQVp2sC`fc*qATOLi)$BPcC`RBnCMAsi~Sh81B5;
+zFw^R+s+7XtM7Fv39LKB@2TYJ*va6iuO8d%3`v%_t-KE5<!fiP`y54MyK{@tmLqSv7
+z`UuW`$iN@bC9d0qc)lx1_WRi*0#Lcws4mIP1kRiLU!6I)9X^5bDR8imc;{IeiA0?S
+znFuT*gc&Dn`>pqua6{)i&dMLnv+73$mMOJe-@~q7-B`L3t9{!kC?n#dYZ2|Xy)@ti
+zxVM@&jeB375d%LAqi^UBIi(>*5sm_%j@#1*8t@yD{f;FpoqnFzbGE$id%OnZEld2s
+zQ$;`nKoHY{z(Z6ci!}2b<X^q~bY?P91G(e5d=7jM+y{<<4iF?>{oLVQ-Z3qG*)S=I
+zAfWlwIzmzhu_>yeVL)a3oHJ!8X=2l&??DUreOA?^JJm|tTq?ZOI9G`MdL@Zlj@7@_
+zJcPzh*7&GT8Q37BmXa4adsFPJ%uj-MTfB$YnjPRz;4h*sW&l;72iyaOi-`SxS3Ozc
+z&slI=4(>m?1^fzp3*3!KlV;EbZUT>IW0MIlBD`zns2CO+eZm>9FrpR1=>LWS68IRw
+zh!D6A{0JP)tRE6N)w~hKcax}-B*rk+SF-|B<4PpuoSgql{0lEwUL^!r!BhYM002ov
+JPDHLkV1l1g)A9fS
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-hdpi/stat_sys_ethernet_disconnected.png b/packages/SystemUI/res/drawable-hdpi/stat_sys_ethernet_disconnected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..932bac1ba141a1616424ffd3bb1400b73058c1d0
+GIT binary patch
+literal 889
+zcmV-<1BU#GP)<h;3K|Lk000e1NJLTq0015U000{Z1^@s6YyCeF00004b3#c}2nYxW
+zd<bNS00009a7bBm000ie000ie0hKEb8vp<U8%ab#R7i>Kl|N`CRUF5^zxOY5*<`~Q
+zQ(Z6?2EF1A?ou6RbzBH01d%{E*afk)5CmHb?W`=WJG40T8s}yU3vDEYVL>pYu<)=<
+zz(ixt1mf&6GjD$HSzIRUZZ^r@UU%HL8Q$;T2Y&DOegnMJi!K@_DT<<3q?F$c8ebFz
+zthK+_>-CRIn;Hf@Gc#j~qPR0iEHk6kY9UFIOP%(izyM&3f%hKF3?llBh<1Bpgb=rx
+z`EHhF5JGhMh6V#bp656^Is$-4i;Ihod;J?58v%g3{c@iR?3_cEWgvR?QF$(KDQ2!j
+zQ8ZSbr>3R=07Nu05IBmW+eGy0MWEf?-7pM8WLbtvr2=d1uipC;f10KUf&fKPoLQp_
+zJTWoxIT5{m5!ic=BuUU}wJ<$B4JqZR7$SlY0?d3dI1Iy+!bG$UV6RWkB>-33?KZM3
+zLy{y{CnqQW1^{dA!=fk_nEBJOv9bFApp=4A3e0TJ1PdWh6a~^Wg|+s}`T6;Kz0}Rk
+z%`48i$K^mJN%HT)!orjF_4N;k==FBHjU-8K?d<F{Yqi?XXEg2faFq`}P1Cb-x@3&`
+zVQp>ADy6OnA;yCs05iWMgt*pdG<KL7d7d}x_4+60f`O;49#ml%Ue{Vf2yt?+BO@bl
+z&Rw?FUOwJh|Mced1uLast$ja^<C~>TN{Ju{kfv$X7}FX4p;GFwGfqm0{r&wFW*#@j
+zJm|O8PJy-7s8*|}R4O+B-01X`MLV^(xA*<Z%F188b)qPG6Tsxs(o)}_Nf(%i?gRL-
+zoWx_>P3PRQ_x=wd#5cgxt8mVh-~aj*?%mDjg6HPu9(JCa&E_}}No(zLyWRft@bK`f
+zTCMiv+=>J0RI3|}#=KJMwIB%Ky<aAxcL9Kz?`W-miR1VS=N$4pXJgE_tE;R1H^j4o
+ztJUg9LWpIpHMG`{QbH*ODJ4cnN8e!Puk$>IbB=`&@5OQ41=d=_7=t{|-?G;JG%z>}
+z!{5C3qn$P(1cD&IaTm&Wo-3v5+uPfDZ;jd6S!``>;o#t4sBXN}i=qDk75h{%D(}4l
+P00000NkvXXu0mjfKv|`i
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-mdpi/connect_creating.png b/packages/SystemUI/res/drawable-mdpi/connect_creating.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..cb507da3f1198020bd0ad68a7032bd00b36ed484
+GIT binary patch
+literal 476
+zcmV<20VDp2P)<h;3K|Lk000e1NJLTq000vJ000>X1^@s6)5{gA0000PbVXQnQ*UN;
+zcVTj606}DLVr3vnZDD6+Qe|Oed2z{QJOBUzen~_@RCwC#Rl!PxP!zpa$I%RNB`xP8
+z0yq9ZyV=hNM2mi*RkV+Yh(5rj;2#JUh|rg`k|`NAym{y4jKy<itXZ_^f^fM!&pY>=
+z``$w$f_;SodyKyeHri!T5Cl?T>$--rEMYdA;m%-=<4Eg^#R9S{8^%o6b*QQeJkP^!
+zJ&t3V&*#H5W1udBUm3vKa7%kJKv5Jh3}a;k=eBM4gIxyL;~2nu32-ub1k18k;F_jE
+zQ5148+v(A(>F%|Ws}(;@Q(_HW*Tr6DW4&Qe0i1jEWzkKHq<k8dB*~I}p63vTAx)=K
+zlp4T5ZyOAYqKLS?wnYx#_esi(wJA3kW|}6bs=CVAVQ#k@*j_=mPe{zH1sodyhql-x
+zdjU9_0G=L;wGYooP2R8BNE1IFSnW87TG=tI0oiTN&fN7*_bC!<*w(gz^qzpb1c_TK
+za)7H4>Bslkb<~W3B3e|1VQ}Fu0l$CSkCS0GK<YZDT8xZLY+2y{gEBZi1Q-A=XQ2GO
+S15R210000<MNUMnLSTXjmC&aE
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-mdpi/connect_established.png b/packages/SystemUI/res/drawable-mdpi/connect_established.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..6c511cbfb01fb60f3fcce60e7be926f1ec6c5bb4
+GIT binary patch
+literal 876
+zcmV-y1C#uTP)<h;3K|Lk000e1NJLTq000>P000>X1^@s6#OZ}&00001b5ch_0Itp)
+z=>Px#24YJ`L;(K){{a7>y{D4^000SaNLh0L01FcU01FcV0GgZ_00007bV*G`2ipe(
+z1`HC??oa&y00QhuL_t(Y$L*E9YaCY;#eetB$L{RRuB4Ta!rB-sg>57UY!gG$q)L%L
+z!GsuMaO1)t0;y~eMlMqt7jBd;RUnO<U^gKoffUA&1RE!yB6dJni8DLeo!Qy<ZVGR)
+zTJMMAGUUR8;oX^g?mOq6Hy&_~mmxrp|9Wf#`Y+a_;g9`8f;55eKHI6+#jxzGJ{OU|
+zSxrSm#84MQqN?rvJr+05WecwZBEXIx%7@vWZ5JI@jIXBG(YlC;Ewx`wB&s!K$2oPt
+z;_HBvgT?i?_Uk}>+)G;zlO@j=29%8jIXM9|1(tx?tWKQM!dbl0{o$gIW)<0JrBm}^
+zRT|Ds2Vv`B^0?ZNw()4GqwOqzilJeAnmBTWvdHweYwOu5V0E;ZEwvlgWM$NE2S92I
+zGVh$W@)WNuw3=rmVML{pNMw7O#7z^$3nm4!aVPOAGS^M@kLkiIc|WId?Q|B6)8N=y
+zZ}*eCv3dV$_{KXIf=+!|j4E1mDB^iZ#2`UMRslB=L=5vmRf0*J8;>@CS`EUOEQsVO
+z%5gvBR}q@(G);Fk2X>~7uq|`#%^L0dx67yZZ<p)9@?h)yQ2KM=(t+j<jv&wTea#Qy
+z8=aE-82D=9N&G-g)aJ~@o7h?Ez~4Y}<%{Ua@$+5`1pPuYW5g2=9)DxI+n2lVO$1S=
+z-AYZO%^%|zWkC*Le2gCwlsWxmQL4c2z){<$gJKkna~Ls*sG>7`@^gDnd$l=CW7$-k
+zdpV{e1PBpI$M~!k9rq^i;LgSF*}<LG2cm&KCGZ0HVf5l-#Pug<3G(T^c=O1b_rbuB
+zd%*5SD_sL_0=Hh7%Ax0<4g&yi=cCTXU(Z}V(ySfz$2hvyuYVsuNfssQ=VZnw6hk0}
+z5XFYEtn>>_(_Q`L=DYi6ZoHix1HJ`<0Z3~MGvkEEQ-^U54~J*KLy$0%C0mjMVoUr1
+z13JWp0$&0TCjE?t^=QuUz;IjyzMfF?ur>aVSK}Wy-X0RO0kpIL0000<MNUMnLSTZ@
+CXP9#U
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-mdpi/connect_no.png b/packages/SystemUI/res/drawable-mdpi/connect_no.png
+new file mode 100755
+index 0000000000000000000000000000000000000000..6f56da11d07c234d57f6bd5d8928c873c7eb2cf5
+GIT binary patch
+literal 373
+zcmV-*0gC>KP)<h;3K|Lk000e1NJLTq000vJ000>X1^@s6)5{gA0000PbVXQnQ*UN;
+zcVTj606}DLVr3vnZDD6+Qe|Oed2z{QJOBUz7fD1xRCwC#l|2fCFc5_&y8a-Dm9@99
+z@eqQg2ecHtfnX!vMg;K(%<>i@7I71IEw<RH!Vq8Hyw51(oYP%p(2e!GVh^27Wm!st
+z-L{REWuZLJnYLIMhSL5tP1N`OHD`|F(7LXaBndnAo2KEzFkH(FLPrN*0YEkw=@tNn
+zVUX*(I|!_UAUGFO5sRXTeBa;2Ez6>Lp5<aHVj}#m>o_uu<CvW~(;?Qj?aTc*j#O0@
+zPt%l10jP-8b<HuJ7!g$z1(!Ng5%WBcOw-)g*bf6zF%_|6MsOsqkW>uT@vw>*%C_zI
+z@7eL>cf`a&S~md1kcS}l@h1qx5Uv<o<b(V~j-sy=J0q558Pjpb{y&t<^%P(LTr{GU
+T2vAGo00000NkvXXu0mjfv_hdN
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-mdpi/stat_sys_ethernet_connected.png b/packages/SystemUI/res/drawable-mdpi/stat_sys_ethernet_connected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..c7cbbf36aecee88e67e6a5d174ea23d01103e891
+GIT binary patch
+literal 794
+zcmV+#1LgdQP)<h;3K|Lk000e1NJLTq000yK000sQ1^@s6ThRUx00004b3#c}2nYxW
+zd<bNS00009a7bBm000ie000ie0hKEb8vp<Tyh%hsR5*=|l)G;fR}_c8bLZ~t%f{<R
+zj4dOBWg&tnAP!VK3P99QxIpxD2qfr<@*mJ6I;0dqDG-tiOAtkhl&m5vg$n}`0vp>{
+zUa#;zW_M=py%e+SUE6EmRCnf{`~80Bo--rBFi-`W><<A{kN3U80<L|)_DJx7pZq?q
+z6vjv?01d_<;&4hOC#@lh>e%u}=79x$01O}lTpc`f_ICEn?BrLiHENWf{2F3e{AM}+
+z;K;f^F@5m<#55|CN9*KS10FB}<h$}5kOK;Fz2Tcmnev~{Ty^PRhwCKdhY82;{+<Cy
+z7m#=(0S-xudp}GvBU-GN!o?xZG@WM+$IRNoaO1Cyz?9Z85gLcyku@C$Q7w_uKzeZI
+z+Qr<tE9ZC0=uui>Y6~;}v~EAIc-DXe5wGnR(s>ALbkzKbY2vL<G?riQ0;zPC%+ViF
+zxqb#_E~PvdNDGKgb+m(RytYGH<AV*Vtp4`Mbpz9*6L$ROeb3AHlRbVerLuk9+n%YE
+zk!W+pS>6Ih(>tWSXwz*oVC&Vhz*IJU0dYdoAf;;BY|NXG1t4kxWyh7D$Fy();AdLk
+zIL0rGW>Y7A-Yb5{ek{)NZnKEx$u5U_=rH5A9*A^%R2k8Q5gP9n0q8q@abG!A$iv@R
+zKr~QsgvDrO;iQY3hm;cMT7E^qnTEux|6|H4k!zMdZ$E$N2^bT`s=5Bbvtdwd1}tIu
+z2Z#jdQ)y;1Iernvm<S2bwSX1@#2Yyl_Mg3;&rF>HAS$g<ntQxld;j4c@Div1u?7aR
+z{oEM1d}q=hJ#s*gpz`0G*)G1QhMQ}FC>5EY?uFa+FsYat5JNIHVoj&32ZnR1{{GFU
+z%G)=803{#=M8NAdtbO%4;DXXjc|Oj$1TMm^d5jtemSx}-5VmF5^#OMElJEPG?gQ+N
+YFXFo!6DUZR@Bjb+07*qoM6N<$f&uPob^rhX
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-mdpi/stat_sys_ethernet_disconnected.png b/packages/SystemUI/res/drawable-mdpi/stat_sys_ethernet_disconnected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..263fd069cb0902b1c38c22f4430d2187060831a2
+GIT binary patch
+literal 702
+zcmV;v0zv(WP)<h;3K|Lk000e1NJLTq000yK000sQ1^@s6ThRUx00004b3#c}2nYxW
+zd<bNS00009a7bBm000ie000ie0hKEb8vp<TU`a$lR5*>zl0Rq^K^Vo~H?y<rknD2i
+zgq&5HkPs2At`lrT#3BJ9MGnC-q!26w!OFwJ!a@tt+D7pbQw5I{b|M&Z7LtI7N#`FD
+z@wh*`m)Yz$V<8tza^WoV%J&|>dGHNz+(rEg&N*6GSU5vO`CfUJWw6#JrBZ1X0K9&{
+zYPIU;^Z7dfF89jQG({Z8UjbbBFW~6tDC+fkF3YlEYwa`N_g{B2DP^(K={zvT)Vp3^
+zU{{?^2XP#KnVOn<+x2R-nmX9q16C@Pf|T;m18Zw*L7`AMVXXy#;?mO6bpTLG!5DM?
+zNMIO-kBDgGV8J;j8jZ#nGb5MFl>n3gKnMXL1em!uFrUw#XXXhadPPK=|8$CJnx5R+
+z+NwrTbc2YlT5BJ+TCICp>xxp!G#U+i2<V(ck|c=Z`1$1IWVP$BtgPH3qDw?Hy0f!$
+zdthMT3Nz<+cX#LFIG)I|?3)ncC4hJz5CE7N%sf6nKmQv5wAOIWjR1h>d8eW%x+sK5
+zlu|X{_q8$RTD#r;*lM-j99l?3&{{(XahHfX03f9VfDiz(EUQ^-=d{*40I<EiJ(i~F
+zG!fnRJnz>bpp^2a);bJ=Kv-*w%slIydn~2=WQ>7x?&tFI@@BbQwg9lWxEL~XYkGS6
+zd(We6Y;3FsL2x#TqSL<bpG%TNH=E5OGrwbIJ2Nx$0f0jv?E!~|hQ>Y5d#aQgR!SiZ
+z!$uGUMPtm1X0yqaO63Uv2LAp*rIa?t{5TRgI5_wjz$_8@&N&bff*^pD676=|G4uQN
+k_4R!V%jI(4#m7&70NJ7qc-&A;eE<Le07*qoM6N<$f;q%IG5`Po
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-sw600dp-hdpi/stat_sys_ethernet_connected.png b/packages/SystemUI/res/drawable-sw600dp-hdpi/stat_sys_ethernet_connected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..01a62037a7a1c9d4cf3f163ef1ce04835ddb6695
+GIT binary patch
+literal 1925
+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
+LNkvXXu0mjf6hMSj
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-sw600dp-hdpi/stat_sys_ethernet_disconnected.png b/packages/SystemUI/res/drawable-sw600dp-hdpi/stat_sys_ethernet_disconnected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..d49161ca9aef836762c23fd9c580e9c5e00232d7
+GIT binary patch
+literal 1536
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-sw600dp-mdpi/stat_sys_ethernet_connected.png b/packages/SystemUI/res/drawable-sw600dp-mdpi/stat_sys_ethernet_connected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..a671ae09db3ce6fe874f8e861a21c80b61f2aedc
+GIT binary patch
+literal 1127
+zcmV-t1ep7YP)<h;3K|Lk000e1NJLTq000^Q000;W1^@s6<bv(R00004b3#c}2nYxW
+zd<bNS00009a7bBm000ie000ie0hKEb8vp<V2}wjjR7i=HmPwCPRTRg6=f3-1%}vqL
+z-7>ZWTZIH1h$JLNc0`vhOjx;aWBeL^2p7bydt6}RurWaeF#;_Lq67#{(@oRRT~^hr
+zH{Ijn)znqR;7LyMhI7yV-2WNw^?+S~0<No16ZxOIWuXtGU9d@FfGJ?MJVUu$-s&J3
+zdiL{o6+vmE8=EwVSOMC0#CDPtfp=_yQ>C2?2ZMUmLsfb)`+W{XMZgCYB+C-Cba&-a
+zxU~E^uxOtF0$_o;VvU{U*WX{TJNDO}V-2p;rW1b?hfB*-fSBi5L~gkr%<K;R*}YG<
+zvjP6>UcAb-+`An_yTy({5_RaC0vRF-(E8(ohPN(n$*Fb?YX^3x)f1lv05*VP5jxEr
+z$OGnqSIF}@?7#s5a5xUx)4BUk(Y9jJ#$%c{ujc{e)}nwhXsMoLlXhx>B8HRIX+D{n
+zlRyOZ3aF;IBto)GJseXal=a$|l3LqJA4Coz&<smnl{uKAGE|eALYfYMO!=ilbJfGg
+z->@^gw{RFt3Jutn#K@I%X=CwREJ8swr&kPQ>7W;FG1s&+$dU7E(-aRJ!Nnb1*a98z
+zUGWQ;QWcFt{9B7`e{GLiUr8gJD&kov&&~Qh`!rHXJ9*A~K>ZD;50}}z@U3R8#u!j(
+z{#9znP70o-yl~W-BPYh%LxMt|h%6JAc6T@i1kk#9m3Vz+)Q1xrm}-_HHb9JrDOJaL
+z1=2^W(7wOy)A)syH9()$url%4WrVk{XVL1{324y&n^&M>Oz64ID{k%j55OwmdKI&E
+z&JA2@Uj^-bSLevu4MD|2r90h*)ZuF!EyNM;0xtr_P6DdzkhB!wx^p9UFM=%$8rlR!
+zQ#p9d6!#yR#6lsy_t*aT+?ls|bo(pd#u#<}+&*6T@H2~ZBbftCfD|fpZd}Se21RUr
+zX4C}$>EksIuiPJT7D$ZeuWA-;xb{W`bzVQP(Ssw4Mcc7zXVbap-!S~?^lEzfbV(rt
+zG;PO~EDQx$jyo)Onp^}P04jh9Y8<H4`A7_>6n1%@s7qA=R6z`af;v1D&(!K0rMEtw
+zF{KLP7y5CuuKk)lK7Zyy7V!n}Bd`uMfW!iYw8hc3t-fdLbGy92FJzEUz2O1do0<wy
+zt3Ab?-;>J0<G!7q8=_V)LY%=0umrS+sk64szUutmm&<Q{P<|5U!_xlqJk7<k8}Vk-
+z_v_Oeh)Ga2@!Gv0iHL!CbWL6i4$*8Z^-mUswAoCe`#)a=egm51!?oDm$sI;cZVM!F
+z#NVx@d*3DL*{Ug)#(JvHU-wV^a7E%a>%jNGMIdBg)&?Gp0`>Z0J1~onWpIWK#Xka_
+tyNJmvsxe|S@scxn#5}(|>E<*h{{edms@~;hNZ|kg002ovPDHLkV1g;?5z_zw
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-sw600dp-mdpi/stat_sys_ethernet_disconnected.png b/packages/SystemUI/res/drawable-sw600dp-mdpi/stat_sys_ethernet_disconnected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..e357d2ba403213f2100a7f95ec45938929e4475a
+GIT binary patch
+literal 983
+zcmV;|11S87P)<h;3K|Lk000e1NJLTq000^Q000;W1^@s6<bv(R00004b3#c}2nYxW
+zd<bNS00009a7bBm000ie000ie0hKEb8vp<Uc}YY;R7i>Kls`<}RTRg+=iEQ<J%04@
+z;Jrj?L#1?S7!;D{LUkZrDh>{W0V9JU(ZtC?6Bi_Pb=5>BR>NZ~m?(=eMoCONkl3+R
+zF;b*Y5+1*Q_n$*~1j++K=YGfgJ?DJxJ?GvFywG!sE)u-3u%K$S+N}^mbY5(hWr_Fx
+z{>;qGKL8*v0vZ|`>H;ta;L2HX)>;tJR+eRR04@$H7K^O4z8pe$#X0wwnZNhm$8DdP
+z1%P^<=Ofly0ie|OE(AI#hBQqP$MIi<Lg7oL)Z?~CM4E^`W9AW}<5RgX2zc6>IF3!L
+z)!LbyoZN1&udc2ZYPH&ar<_C3{QNu*4i4%licY;CNs^Sb))Ybj5tWou*H>0nE&+hn
+z8cL}GfW9+9^?LofbM7r>zH}NWP17!BF6ViUD2hg$b3e7c130|*9di#srBdkzGk-!v
+z10jS2K=Mp10qD;2T*Yx5_xJbz$jmtr4S4T|iD;9V9}tlT03v!qL|Z37<#HJz1UTma
+z;1?mpDiPTuJ1!H^`$>{qYqeTWwzs!GtW+wYP$+z0jJcX5$$ewY7h3Cw0MOgp>o+$y
+z^An)<@zXR#k|g(t=&Ol|iLC9dudlyMM7N3P8WDACt>0tjN(kY$_r7ecy_x6v$61zb
+zSZnv2&F0V3)6)-51sP*tjDgm=^Pm7Qb2*BlPqo%k2+<{k5K_v^#+Y}FF-aW9TUnO1
+z0CWZ&6aj#naU6f%Xf!M{Lu-vRO}mT5;=sX%_LNfJNGW3g5JG^6kY(AMA%vi{{?1za
+z`_a0`KvGIXQ3S1Z9l&cLghRMeiik)9fcJi{*=&AYtyY^y^LKZ50{~yGRu}g7_f1ET
+zQfk9FHz%d+mQuodubKI6=Ug4YT_XDR>0tthXio^SGd4Ds9WA!Jylg@Uetdj9eYR7F
+zpwZFMM~jP#TRlBJQ3yfQYPCTkdLz$s7sv76X`23!rs;pim@qp#`|rugovmZ7>+9<q
+z(OSQwl<E;e)S3Bp=NyC(9~FzmSGCp;lO*v=OH1DZa7SBSDwU8V$yMjvqjN!(O63X>
+z-D2jKq?BOhKM&>uYwd8BWy8i88$#FsaQMcE2q6S8^B>mQd*_0rl)nif?l5z)z1F^U
+zT5AvyTCJAf+1a_fwzhWcubG;fLZi_@qtWR62ffhq>VM>{jfddAbdLZ4002ovPDHLk
+FV1ldF$wmMG
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-sw600dp-xhdpi/stat_sys_ethernet_connected.png b/packages/SystemUI/res/drawable-sw600dp-xhdpi/stat_sys_ethernet_connected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..3df225b54c3587332f9f9bdbc88b9a77170add78
+GIT binary patch
+literal 2811
+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
+N002ovPDHLkV1meAU{(MC
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-sw600dp-xhdpi/stat_sys_ethernet_disconnected.png b/packages/SystemUI/res/drawable-sw600dp-xhdpi/stat_sys_ethernet_disconnected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..0c2059bf02a2c318dc47a975ceeb788769accce6
+GIT binary patch
+literal 2303
+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
+Z{tNRb*qTaJKLh{(002ovPDHLkV1hrsJ+}Y=
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-xhdpi/stat_sys_ethernet_connected.png b/packages/SystemUI/res/drawable-xhdpi/stat_sys_ethernet_connected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..01a62037a7a1c9d4cf3f163ef1ce04835ddb6695
+GIT binary patch
+literal 1925
+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
+LNkvXXu0mjf6hMSj
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable-xhdpi/stat_sys_ethernet_disconnected.png b/packages/SystemUI/res/drawable-xhdpi/stat_sys_ethernet_disconnected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..d49161ca9aef836762c23fd9c580e9c5e00232d7
+GIT binary patch
+literal 1536
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable/stat_sys_ethernet_connected.png b/packages/SystemUI/res/drawable/stat_sys_ethernet_connected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..da4e16286df16f15cfc7636c949072ddb79f521d
+GIT binary patch
+literal 1039
+zcmV+q1n~QbP)<h;3K|Lk000e1NJLTq0015U000{Z1^@s6YyCeF00004b3#c}2nYxW
+zd<bNS00009a7bBm000ie000ie0hKEb8vp<Uu}MThR7i=<mfedRWfaDLXJ(R}B-=Hc
+zY-@`y@dF87ScSc)LPeqAy}42RC%mn9-iTQ6uMj~fL<RA}59&oP1SwPs;*=^4w#(LT
+znz-3!lFY~PVrG&_GRY=4;se7>=6%omocEdYJ|`wn1B3_x{}BYR0S^cPJz=gDU$SK0
+zA}HX;Tx%`x6!5lKT&nKMR=$8A28akECK~#PDxjzsU>MO(2pAw3{jQFV9`FP31@OpP
+zgSZS_C_gE$6yLb~%o=e3<bmF2A9pq2Ylvi96$W7BOWd*RdutO9oEw-X;s=q+>kup8
+zi_%Unb`tFR-uT%tCpDBNmee&%m;{K*B*twybboG!Q!|sB!uGBV?E2MWGF+@6qx%zL
+zAu61UK#BRvR$u_^0xvvntG$uhspn$M#3YHU&KypEIK5*7IG-!>;Z9Aqa<&8-qE-Ra
+zBk+bu;Hv@TfD(!ZzkJd|5Wk~=nIj)~<N$M4Et%2IA4~*EWZNiTXw-AH`Z(nzSu?(}
+za0;+m4iB$2k5g)m>Ab<TAr&exIG*en;v<(XgjM0T97<J&n^h@!F6xg65yUiM^YnD_
+zj(U?CN(QDx88|m^Th2nVLajbdvQVp2sC`fc*qATOLi)$BPcC`RBnCMAsi~Sh81B5;
+zFw^R+s+7XtM7Fv39LKB@2TYJ*va6iuO8d%3`v%_t-KE5<!fiP`y54MyK{@tmLqSv7
+z`UuW`$iN@bC9d0qc)lx1_WRi*0#Lcws4mIP1kRiLU!6I)9X^5bDR8imc;{IeiA0?S
+znFuT*gc&Dn`>pqua6{)i&dMLnv+73$mMOJe-@~q7-B`L3t9{!kC?n#dYZ2|Xy)@ti
+zxVM@&jeB375d%LAqi^UBIi(>*5sm_%j@#1*8t@yD{f;FpoqnFzbGE$id%OnZEld2s
+zQ$;`nKoHY{z(Z6ci!}2b<X^q~bY?P91G(e5d=7jM+y{<<4iF?>{oLVQ-Z3qG*)S=I
+zAfWlwIzmzhu_>yeVL)a3oHJ!8X=2l&??DUreOA?^JJm|tTq?ZOI9G`MdL@Zlj@7@_
+zJcPzh*7&GT8Q37BmXa4adsFPJ%uj-MTfB$YnjPRz;4h*sW&l;72iyaOi-`SxS3Ozc
+z&slI=4(>m?1^fzp3*3!KlV;EbZUT>IW0MIlBD`zns2CO+eZm>9FrpR1=>LWS68IRw
+zh!D6A{0JP)tRE6N)w~hKcax}-B*rk+SF-|B<4PpuoSgql{0lEwUL^!r!BhYM002ov
+JPDHLkV1l1g)A9fS
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/drawable/stat_sys_ethernet_disconnected.png b/packages/SystemUI/res/drawable/stat_sys_ethernet_disconnected.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..932bac1ba141a1616424ffd3bb1400b73058c1d0
+GIT binary patch
+literal 889
+zcmV-<1BU#GP)<h;3K|Lk000e1NJLTq0015U000{Z1^@s6YyCeF00004b3#c}2nYxW
+zd<bNS00009a7bBm000ie000ie0hKEb8vp<U8%ab#R7i>Kl|N`CRUF5^zxOY5*<`~Q
+zQ(Z6?2EF1A?ou6RbzBH01d%{E*afk)5CmHb?W`=WJG40T8s}yU3vDEYVL>pYu<)=<
+zz(ixt1mf&6GjD$HSzIRUZZ^r@UU%HL8Q$;T2Y&DOegnMJi!K@_DT<<3q?F$c8ebFz
+zthK+_>-CRIn;Hf@Gc#j~qPR0iEHk6kY9UFIOP%(izyM&3f%hKF3?llBh<1Bpgb=rx
+z`EHhF5JGhMh6V#bp656^Is$-4i;Ihod;J?58v%g3{c@iR?3_cEWgvR?QF$(KDQ2!j
+zQ8ZSbr>3R=07Nu05IBmW+eGy0MWEf?-7pM8WLbtvr2=d1uipC;f10KUf&fKPoLQp_
+zJTWoxIT5{m5!ic=BuUU}wJ<$B4JqZR7$SlY0?d3dI1Iy+!bG$UV6RWkB>-33?KZM3
+zLy{y{CnqQW1^{dA!=fk_nEBJOv9bFApp=4A3e0TJ1PdWh6a~^Wg|+s}`T6;Kz0}Rk
+z%`48i$K^mJN%HT)!orjF_4N;k==FBHjU-8K?d<F{Yqi?XXEg2faFq`}P1Cb-x@3&`
+zVQp>ADy6OnA;yCs05iWMgt*pdG<KL7d7d}x_4+60f`O;49#ml%Ue{Vf2yt?+BO@bl
+z&Rw?FUOwJh|Mced1uLast$ja^<C~>TN{Ju{kfv$X7}FX4p;GFwGfqm0{r&wFW*#@j
+zJm|O8PJy-7s8*|}R4O+B-01X`MLV^(xA*<Z%F188b)qPG6Tsxs(o)}_Nf(%i?gRL-
+zoWx_>P3PRQ_x=wd#5cgxt8mVh-~aj*?%mDjg6HPu9(JCa&E_}}No(zLyWRft@bK`f
+zTCMiv+=>J0RI3|}#=KJMwIB%Ky<aAxcL9Kz?`W-miR1VS=N$4pXJgE_tE;R1H^j4o
+ztJUg9LWpIpHMG`{QbH*ODJ4cnN8e!Puk$>IbB=`&@5OQ41=d=_7=t{|-?G;JG%z>}
+z!{5C3qn$P(1cD&IaTm&Wo-3v5+uPfDZ;jd6S!``>;o#t4sBXN}i=qDk75h{%D(}4l
+P00000NkvXXu0mjfKv|`i
+
+literal 0
+HcmV?d00001
+
+diff --git a/packages/SystemUI/res/layout/signal_cluster_view.xml b/packages/SystemUI/res/layout/signal_cluster_view.xml
+index 9be9041..5990c7d 100644
+--- a/packages/SystemUI/res/layout/signal_cluster_view.xml
++++ b/packages/SystemUI/res/layout/signal_cluster_view.xml
+@@ -28,7 +28,6 @@
+         android:id="@+id/wifi_combo"
+         android:layout_height="wrap_content"
+         android:layout_width="wrap_content"
+-        android:layout_marginRight="-6dp"
+         >
+         <ImageView
+             android:id="@+id/wifi_signal"
+@@ -45,6 +44,33 @@
+             android:layout_gravity="center|bottom"
+             />
+     </FrameLayout>
++    <FrameLayout
++       android:layout_height="wrap_content"
++       android:layout_width="wrap_content"
++       >
++	<View
++            android:layout_height="6dp"
++            android:layout_width="6dp"
++            android:visibility="invisible"
++            />
++        <FrameLayout
++            android:id="@+id/ethernet_combo"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            >
++            <ImageView
++                android:id="@+id/ethernet_status"
++                android:layout_height="wrap_content"
++                android:layout_width="wrap_content"
++                />
++            <ImageView
++                android:id="@+id/ethernet_inout"
++                android:layout_height="wrap_content"
++                android:layout_width="wrap_content"
++                android:layout_gravity="right|bottom"
++                />
++        </FrameLayout>
++    </FrameLayout>
+     <View
+         android:layout_height="6dp"
+         android:layout_width="6dp"
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/SignalClusterView.java b/packages/SystemUI/src/com/android/systemui/statusbar/SignalClusterView.java
+index 744a46b..5b8968d 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/SignalClusterView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/SignalClusterView.java
+@@ -41,13 +41,15 @@ public class SignalClusterView
+ 
+     private boolean mWifiVisible = false;
+     private int mWifiStrengthId = 0, mWifiActivityId = 0;
++    private boolean mEthernetVisible = false;
++    private int mEthernetId = 0;
+     private boolean mMobileVisible = false;
+     private int mMobileStrengthId = 0, mMobileActivityId = 0, mMobileTypeId = 0;
+     private boolean mIsAirplaneMode = false;
+-    private String mWifiDescription, mMobileDescription, mMobileTypeDescription;
++    private String mWifiDescription, mEthernetDescription, mMobileDescription, mMobileTypeDescription;
+ 
+-    ViewGroup mWifiGroup, mMobileGroup;
+-    ImageView mWifi, mMobile, mWifiActivity, mMobileActivity, mMobileType;
++    ViewGroup mWifiGroup, mEthernetGroup, mMobileGroup;
++    ImageView mWifi, mEthernet, mMobile, mWifiActivity, mMobileActivity, mMobileType;
+     View mSpacer;
+ 
+     public SignalClusterView(Context context) {
+@@ -74,6 +76,8 @@ public class SignalClusterView
+         mWifiGroup      = (ViewGroup) findViewById(R.id.wifi_combo);
+         mWifi           = (ImageView) findViewById(R.id.wifi_signal);
+         mWifiActivity   = (ImageView) findViewById(R.id.wifi_inout);
++        mEthernetGroup  = (ViewGroup) findViewById(R.id.ethernet_combo);
++        mEthernet       = (ImageView) findViewById(R.id.ethernet_status);
+         mMobileGroup    = (ViewGroup) findViewById(R.id.mobile_combo);
+         mMobile         = (ImageView) findViewById(R.id.mobile_signal);
+         mMobileActivity = (ImageView) findViewById(R.id.mobile_inout);
+@@ -88,6 +92,8 @@ public class SignalClusterView
+         mWifiGroup      = null;
+         mWifi           = null;
+         mWifiActivity   = null;
++        mEthernetGroup  = null;
++        mEthernet       = null;
+         mMobileGroup    = null;
+         mMobile         = null;
+         mMobileActivity = null;
+@@ -106,6 +112,15 @@ public class SignalClusterView
+         apply();
+     }
+ 
++    public void setEthernetIndicators(boolean visible, int statusIcon,
++            String contentDescription) {
++        mEthernetVisible = visible;
++        mEthernetId = statusIcon;
++        mEthernetDescription = contentDescription;
++
++        apply();
++    }
++
+     public void setMobileDataIndicators(boolean visible, int strengthIcon, int activityIcon,
+             int typeIcon, String contentDescription, String typeContentDescription) {
+         mMobileVisible = visible;
+@@ -140,6 +155,14 @@ public class SignalClusterView
+                     (mWifiVisible ? "VISIBLE" : "GONE"),
+                     mWifiStrengthId, mWifiActivityId));
+ 
++        if (mEthernetVisible) {
++            mEthernetGroup.setVisibility(View.VISIBLE);
++            mEthernet.setImageResource(mEthernetId);
++            mEthernetGroup.setContentDescription(mEthernetDescription);
++        } else {
++            mEthernetGroup.setVisibility(View.GONE);
++        }
++
+         if (mMobileVisible) {
+             mMobileGroup.setVisibility(View.VISIBLE);
+             mMobile.setImageResource(mMobileStrengthId);
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+index 9608de4..e62954a 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PhoneStatusBar.java
+@@ -352,6 +352,13 @@ public class PhoneStatusBar extends StatusBar {
+                 (SignalClusterView)sb.findViewById(R.id.signal_cluster);
+         mNetworkController.addSignalCluster(signalCluster);
+         signalCluster.setNetworkController(mNetworkController);
++
++        final ImageView ethernetStatus =
++            (ImageView)sb.findViewById(R.id.ethernet_status);
++	        if (ethernetStatus != null) {
++                mNetworkController.addEthernetIconView(ethernetStatus);
++        }
++
+ //        final ImageView wimaxRSSI =
+ //                (ImageView)sb.findViewById(R.id.wimax_signal);
+ //        if (wimaxRSSI != null) {
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java b/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
+index 506dd9a..dd9b28c 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/policy/NetworkController.java
+@@ -31,6 +31,8 @@ import android.net.NetworkInfo;
+ import android.net.wifi.WifiConfiguration;
+ import android.net.wifi.WifiInfo;
+ import android.net.wifi.WifiManager;
++import android.net.ethernet.EthernetManager;
++import android.net.ethernet.EthernetStateTracker;
+ import android.net.wimax.WimaxManagerConstants;
+ import android.os.Binder;
+ import android.os.Handler;
+@@ -92,6 +94,7 @@ public class NetworkController extends BroadcastReceiver {
+ 
+     String mContentDescriptionPhoneSignal;
+     String mContentDescriptionWifi;
++    String mContentDescriptionEthernet = "Ethernet";
+     String mContentDescriptionWimax;
+     String mContentDescriptionCombinedSignal;
+     String mContentDescriptionDataType;
+@@ -111,6 +114,17 @@ public class NetworkController extends BroadcastReceiver {
+     private int mBluetoothTetherIconId =
+         com.android.internal.R.drawable.stat_sys_tether_bluetooth;
+ 
++    // Ethernet
++    boolean mEthernetEnabled, mEthernetConnected, mHasEthernet;
++    int mEthernetIconId = R.drawable.stat_sys_ethernet_disconnected;
++    int mEthernetActivity = EthernetManager.DATA_ACTIVITY_NONE;
++    private static final int[] sEthImages = {
++        R.drawable.connect_established,
++        R.drawable.connect_no,
++        R.drawable.connect_creating
++    };
++
++
+     //wimax
+     private boolean mWimaxSupported = false;
+     private boolean mIsWimaxEnabled = false;
+@@ -133,6 +147,7 @@ public class NetworkController extends BroadcastReceiver {
+     ArrayList<ImageView> mDataDirectionIconViews = new ArrayList<ImageView>();
+     ArrayList<ImageView> mDataDirectionOverlayIconViews = new ArrayList<ImageView>();
+     ArrayList<ImageView> mWifiIconViews = new ArrayList<ImageView>();
++    ArrayList<ImageView> mEthernetIconViews = new ArrayList<ImageView>();
+     ArrayList<ImageView> mWimaxIconViews = new ArrayList<ImageView>();
+     ArrayList<ImageView> mCombinedSignalIconViews = new ArrayList<ImageView>();
+     ArrayList<ImageView> mDataTypeIconViews = new ArrayList<ImageView>();
+@@ -144,6 +159,7 @@ public class NetworkController extends BroadcastReceiver {
+     int mLastDataDirectionIconId = -1;
+     int mLastDataDirectionOverlayIconId = -1;
+     int mLastWifiIconId = -1;
++    int mLastEthernetIconId = -1;
+     int mLastWimaxIconId = -1;
+     int mLastCombinedSignalIconId = -1;
+     int mLastDataTypeIconId = -1;
+@@ -159,6 +175,7 @@ public class NetworkController extends BroadcastReceiver {
+     public interface SignalCluster {
+         void setWifiIndicators(boolean visible, int strengthIcon, int activityIcon,
+                 String contentDescription);
++	void setEthernetIndicators(boolean visible, int statusIcon, String contentDescription);
+         void setMobileDataIndicators(boolean visible, int strengthIcon, int activityIcon,
+                 int typeIcon, String contentDescription, String typeContentDescription);
+         void setIsAirplaneMode(boolean is);
+@@ -174,6 +191,7 @@ public class NetworkController extends BroadcastReceiver {
+         ConnectivityManager cm = (ConnectivityManager)mContext.getSystemService(
+                 Context.CONNECTIVITY_SERVICE);
+         mHasMobileDataFeature = cm.isNetworkSupported(ConnectivityManager.TYPE_MOBILE);
++	mHasEthernet = cm.isNetworkSupported(ConnectivityManager.TYPE_ETHERNET);
+ 
+         mShowPhoneRSSIForData = res.getBoolean(R.bool.config_showPhoneRSSIForData);
+         mShowAtLeastThreeGees = res.getBoolean(R.bool.config_showMin3G);
+@@ -213,6 +231,7 @@ public class NetworkController extends BroadcastReceiver {
+         filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
+         filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+         filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
++        filter.addAction(EthernetManager.ETHERNET_STATE_CHANGED_ACTION);
+         filter.addAction(TelephonyIntents.ACTION_SIM_STATE_CHANGED);
+         filter.addAction(Telephony.Intents.SPN_STRINGS_UPDATED_ACTION);
+         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+@@ -250,6 +269,12 @@ public class NetworkController extends BroadcastReceiver {
+     public void addWifiIconView(ImageView v) {
+         mWifiIconViews.add(v);
+     }
++
++    public void addEthernetIconView(ImageView v) {
++        mEthernetIconViews.add(v);
++
++    }
++
+     public void addWimaxIconView(ImageView v) {
+         mWimaxIconViews.add(v);
+     }
+@@ -286,6 +311,11 @@ public class NetworkController extends BroadcastReceiver {
+                 mWifiActivityIconId,
+                 mContentDescriptionWifi);
+ 
++        cluster.setEthernetIndicators(
++                mHasEthernet,
++                mEthernetIconId,
++                mContentDescriptionEthernet);
++
+         if (mIsWimaxEnabled && mWimaxConnected) {
+             // wimax is special
+             cluster.setMobileDataIndicators(
+@@ -339,6 +369,9 @@ public class NetworkController extends BroadcastReceiver {
+         } else if (action.equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)) {
+             updateAirplaneMode();
+             refreshViews();
++        } else if (action.equals(EthernetManager.ETHERNET_STATE_CHANGED_ACTION)) {
++            updateEth(intent);
++            refreshViews();
+         } else if (action.equals(WimaxManagerConstants.NET_4G_STATE_CHANGED_ACTION) ||
+                 action.equals(WimaxManagerConstants.SIGNAL_LEVEL_CHANGED_ACTION) ||
+                 action.equals(WimaxManagerConstants.WIMAX_NETWORK_STATE_CHANGED_ACTION)) {
+@@ -794,6 +827,14 @@ public class NetworkController extends BroadcastReceiver {
+         }
+     }
+ 
++    private void updateEthernetIcons() {
++        if (mEthernetConnected) {
++             mEthernetIconId = R.drawable.stat_sys_ethernet_connected;
++        } else {
++             mEthernetIconId = R.drawable.stat_sys_ethernet_disconnected;
++        }
++    }
++
+     private String huntForSsid(WifiInfo info) {
+         String ssid = info.getSSID();
+         if (ssid != null) {
+@@ -877,12 +918,16 @@ public class NetworkController extends BroadcastReceiver {
+             mBluetoothTethered = false;
+         }
+ 
++        if (info != null && info.getType() == ConnectivityManager.TYPE_ETHERNET) {
++            mEthernetConnected = info.isConnected();
++        }
+         // We want to update all the icons, all at once, for any condition change
+         updateDataNetType();
+         updateWimaxIcons();
+         updateDataIcon();
+         updateTelephonySignalStrength();
+         updateWifiIcons();
++	updateEthernetIcons();
+     }
+ 
+ 
+@@ -984,6 +1029,12 @@ public class NetworkController extends BroadcastReceiver {
+             }
+         }
+ 
++	if (mEthernetConnected) {
++	    combinedLabel = "Ethernet Connected";
++	    combinedActivityIconId = 0;
++	    combinedSignalIconId = mEthernetIconId; 
++	}
++
+         if (mBluetoothTethered) {
+             combinedLabel = mContext.getString(R.string.bluetooth_tethered);
+             combinedSignalIconId = mBluetoothTetherIconId;
+@@ -1017,7 +1068,7 @@ public class NetworkController extends BroadcastReceiver {
+                 combinedSignalIconId = mDataSignalIconId;
+             }
+         }
+-        else if (!mDataConnected && !mWifiConnected && !mBluetoothTethered && !mWimaxConnected) {
++        else if (!mDataConnected && !mWifiConnected && !mBluetoothTethered && !mEthernetConnected && !mWimaxConnected) {
+             // pretty much totally disconnected
+ 
+             combinedLabel = context.getString(R.string.status_bar_settings_signal_meter_disconnected);
+@@ -1037,6 +1088,7 @@ public class NetworkController extends BroadcastReceiver {
+         if (DEBUG) {
+             Slog.d(TAG, "refreshViews connected={"
+                     + (mWifiConnected?" wifi":"")
++		    + (mEthernetConnected?" Ethernet":"")
+                     + (mDataConnected?" data":"")
+                     + " } level="
+                     + ((mSignalStrength == null)?"??":Integer.toString(mSignalStrength.getLevel()))
+@@ -1051,12 +1103,14 @@ public class NetworkController extends BroadcastReceiver {
+                     + " mDataSignalIconId=0x" + Integer.toHexString(mDataSignalIconId)
+                     + " mDataTypeIconId=0x" + Integer.toHexString(mDataTypeIconId)
+                     + " mWifiIconId=0x" + Integer.toHexString(mWifiIconId)
++		    + " mEthernetIconId=0x" + Integer.toHexString(mEthernetIconId)
+                     + " mBluetoothTetherIconId=0x" + Integer.toHexString(mBluetoothTetherIconId));
+         }
+ 
+         if (mLastPhoneSignalIconId          != mPhoneSignalIconId
+          || mLastDataDirectionOverlayIconId != combinedActivityIconId
+          || mLastWifiIconId                 != mWifiIconId
++         || mLastEthernetIconId             != mEthernetIconId
+          || mLastWimaxIconId                != mWimaxIconId
+          || mLastDataTypeIconId             != mDataTypeIconId)
+         {
+@@ -1124,6 +1178,23 @@ public class NetworkController extends BroadcastReceiver {
+                 }
+            }
+         }
++
++        // the Ethernet icon
++        if (mLastEthernetIconId != mEthernetIconId) {
++            mLastEthernetIconId = mEthernetIconId;
++            N = mEthernetIconViews.size();
++            for (int i=0; i<N; i++) {
++                final ImageView v = mEthernetIconViews.get(i);
++                if (mEthernetIconId == 0) {
++                    v.setVisibility(View.INVISIBLE);
++                } else {
++                    v.setVisibility(View.VISIBLE);
++                    v.setImageResource(mEthernetIconId);
++                    v.setContentDescription(mContentDescriptionEthernet);
++                }
++            }
++        }
++
+         // the combined data signal icon
+         if (mLastCombinedSignalIconId != combinedSignalIconId) {
+             mLastCombinedSignalIconId = combinedSignalIconId;
+@@ -1205,6 +1276,22 @@ public class NetworkController extends BroadcastReceiver {
+         }
+     }
+ 
++    private final void updateEth(Intent intent) {
++        final int event = intent.getIntExtra(EthernetManager.EXTRA_ETHERNET_STATE, EthernetManager.ETHERNET_STATE_UNKNOWN);
++        switch (event) {
++            case EthernetStateTracker.EVENT_HW_CONNECTED:
++            case EthernetStateTracker.EVENT_INTERFACE_CONFIGURATION_SUCCEEDED:
++                mEthernetIconId = sEthImages[0];
++                break;
++            case EthernetStateTracker.EVENT_HW_DISCONNECTED:
++            case EthernetStateTracker.EVENT_INTERFACE_CONFIGURATION_FAILED:
++                mEthernetIconId = sEthImages[1];
++                return;
++            default:
++                mEthernetIconId = sEthImages[2];
++        }
++    }
++
+     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+         pw.println("NetworkController state:");
+         pw.println("  - telephony ------");
+@@ -1271,6 +1358,12 @@ public class NetworkController extends BroadcastReceiver {
+         pw.print("  mWifiActivity=");
+         pw.println(mWifiActivity);
+ 
++        if (mHasEthernet) {
++            pw.println("  - Ethernet ------");
++            pw.print("  mEthernetConnected=");
++            pw.println(mEthernetConnected);
++        }
++
+         if (mWimaxSupported) {
+             pw.println("  - wimax ------");
+             pw.print("  mIsWimaxEnabled="); pw.println(mIsWimaxEnabled);
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/tablet/TabletStatusBar.java b/packages/SystemUI/src/com/android/systemui/statusbar/tablet/TabletStatusBar.java
+index 583bab0..3694fe7 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/tablet/TabletStatusBar.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/tablet/TabletStatusBar.java
+@@ -227,6 +227,12 @@ public class TabletStatusBar extends StatusBar implements
+         mNetworkController.addWifiLabelView(
+                 (TextView)mNotificationPanel.findViewById(R.id.wifi_text));
+ 
++        final ImageView ethernetStatus =
++                (ImageView)mNotificationPanel.findViewById(R.id.ethernet_status);
++	if (ethernetStatus != null) {
++	        mNetworkController.addEthernetIconView(ethernetStatus);
++	}
++
+         mNetworkController.addDataTypeIconView(
+                 (ImageView)mNotificationPanel.findViewById(R.id.mobile_type));
+         mNetworkController.addMobileLabelView(
+diff --git a/services/java/com/android/server/ConnectivityService.java b/services/java/com/android/server/ConnectivityService.java
+index b7dc4a2..002fb56 100644
+--- a/services/java/com/android/server/ConnectivityService.java
++++ b/services/java/com/android/server/ConnectivityService.java
+@@ -53,6 +53,7 @@ import android.net.Proxy;
+ import android.net.ProxyProperties;
+ import android.net.RouteInfo;
+ import android.net.wifi.WifiStateTracker;
++import android.net.ethernet.EthernetStateTracker;
+ import android.net.wimax.WimaxManagerConstants;
+ import android.os.Binder;
+ import android.os.FileUtils;
+@@ -413,7 +414,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
+                             n.type);
+                     continue;
+                 }
+-                if (mRadioAttributes[n.radio] == null) {
++                if ((n.type != ConnectivityManager.TYPE_ETHERNET) && (mRadioAttributes[n.radio] == null)) {
+                     loge("Error in networkAttributes - ignoring attempt to use undefined " +
+                             "radio " + n.radio + " in network type " + n.type);
+                     continue;
+@@ -505,8 +506,14 @@ public class ConnectivityService extends IConnectivityManager.Stub {
+                 }
+                 break;
+             case ConnectivityManager.TYPE_ETHERNET:
+-                mNetTrackers[netType] = EthernetDataTracker.getInstance();
+-                mNetTrackers[netType].startMonitoring(context, mHandler);
++                //mNetTrackers[netType] = EthernetDataTracker.getInstance();
++                //mNetTrackers[netType].startMonitoring(context, mHandler);
++                if (DBG) log("Starting Ethernet Service.");
++                EthernetStateTracker est = new EthernetStateTracker(context, mHandler);
++                EthernetService ethService = new EthernetService(context, est);
++                ServiceManager.addService(Context.ETHERNET_SERVICE, ethService);
++                mNetTrackers[ConnectivityManager.TYPE_ETHERNET] = est;
++                est.startMonitoring(context, mHandler);
+                 break;
+             default:
+                 loge("Trying to create a DataStateTracker for an unknown radio type " +
+@@ -1916,8 +1923,14 @@ private NetworkStateTracker makeWimaxStateTracker() {
+                 }
+             }
+             if (mNetConfigs[netType].isDefault()) {
+-                handleApplyDefaultProxy(newLp.getHttpProxy());
+-            }
++                if(netType == ConnectivityManager.TYPE_ETHERNET) {
++                    log("net Type is ConnectivityManager.TYPE_ETHERNET "+ netType + " Setting mGlobalProxy" );
++                    handleApplyDefaultProxy(mGlobalProxy);
++                }
++                else {
++                    handleApplyDefaultProxy(newLp.getHttpProxy());
++                }
++	    }
+         } else {
+             if (VDBG) {
+                 log("handleConnectivityChange: changed linkProperty[" + netType + "]:" +
+@@ -2736,6 +2749,10 @@ private NetworkStateTracker makeWimaxStateTracker() {
+         if (mGlobalProxy == null) {
+             proxyProperties = mDefaultProxy;
+         }
++        if(mActiveDefaultNetwork == ConnectivityManager.TYPE_ETHERNET) {
++            log("net Type is ConnectivityManager.TYPE_ETHERNET "+ mActiveDefaultNetwork + "Setting mGlobalProxy" );
++            handleApplyDefaultProxy(mGlobalProxy);
++        }
+         //sendProxyBroadcast(proxyProperties);
+     }
+ 
+diff --git a/services/java/com/android/server/EthernetService.java b/services/java/com/android/server/EthernetService.java
+new file mode 100644
+index 0000000..46f4669
+--- /dev/null
++++ b/services/java/com/android/server/EthernetService.java
+@@ -0,0 +1,212 @@
++/*
++ * Copyright (C) 2010 The Android-x86 Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * Author: Yi Sun <beyounn@gmail.com>
++ */
++
++package com.android.server;
++
++import java.net.UnknownHostException;
++import android.net.ethernet.EthernetNative;
++import android.net.ethernet.IEthernetManager;
++import android.net.ethernet.EthernetManager;
++import android.net.ethernet.EthernetStateTracker;
++import android.net.ethernet.EthernetDevInfo;
++import android.provider.Settings;
++import android.util.Slog;
++import android.content.BroadcastReceiver;
++import android.content.ContentResolver;
++import android.content.Context;
++import android.content.Intent;
++import android.content.IntentFilter;
++
++/**
++ * EthernetService handles remote Ethernet operation requests by implementing
++ * the IEthernetManager interface. It also creates a EtherentMonitor to listen
++ * for Etherent-related events.
++ *
++ * @hide
++ */
++public class EthernetService<syncronized> extends IEthernetManager.Stub {
++    private static final String TAG = "EthernetService";
++    private static final int ETHERNET_HAS_CONFIG = 1;
++    private static final boolean localLOGV = true;
++
++    private int mEthState= EthernetManager.ETHERNET_STATE_UNKNOWN;
++    private Context mContext;
++    private EthernetStateTracker mTracker;
++    private String[] DevName;
++    private int isEnabled ;
++
++    public EthernetService(Context context, EthernetStateTracker Tracker) {
++        mTracker = Tracker;
++        mContext = context;
++
++        isEnabled = getPersistedState();
++        if (localLOGV == true) Slog.i(TAG, "Ethernet dev enabled " + isEnabled);
++        getDeviceNameList();
++        setState(isEnabled);
++        mTracker.StartPolling();
++    }
++
++    /**
++     * check if the ethernet service has been configured.
++     * @return {@code true} if configured {@code false} otherwise
++     */
++    public boolean isConfigured() {
++        final ContentResolver cr = mContext.getContentResolver();
++        return (Settings.Secure.getInt(cr, Settings.Secure.ETHERNET_CONF, 0) == ETHERNET_HAS_CONFIG);
++
++    }
++
++    /**
++     * Return the saved ethernet configuration
++     * @return ethernet interface configuration on success, {@code null} on failure
++     */
++    public synchronized EthernetDevInfo getSavedConfig() {
++        if (!isConfigured())
++            return null;
++
++        final ContentResolver cr = mContext.getContentResolver();
++        EthernetDevInfo info = new EthernetDevInfo();
++        info.setConnectMode(Settings.Secure.getString(cr, Settings.Secure.ETHERNET_MODE));
++        info.setIfName(Settings.Secure.getString(cr, Settings.Secure.ETHERNET_IFNAME));
++        info.setIpAddress(Settings.Secure.getString(cr, Settings.Secure.ETHERNET_IP));
++        info.setDnsAddr(Settings.Secure.getString(cr, Settings.Secure.ETHERNET_DNS));
++        info.setNetMask(Settings.Secure.getString(cr, Settings.Secure.ETHERNET_MASK));
++        info.setRouteAddr(Settings.Secure.getString(cr, Settings.Secure.ETHERNET_ROUTE));
++
++        return info;
++    }
++
++    /**
++     * Set the ethernet interface configuration mode
++     * @param mode {@code ETHERNET_CONN_MODE_DHCP} for dhcp {@code ETHERNET_CONN_MODE_MANUAL} for manual configure
++     */
++    public synchronized void setMode(String mode) {
++        final ContentResolver cr = mContext.getContentResolver();
++        if (DevName != null) {
++            Settings.Secure.putString(cr, Settings.Secure.ETHERNET_IFNAME, DevName[0]);
++            Settings.Secure.putInt(cr, Settings.Secure.ETHERNET_CONF, 1);
++            Settings.Secure.putString(cr, Settings.Secure.ETHERNET_MODE, mode);
++        }
++    }
++
++    /**
++     * update a ethernet interface information
++     * @param info  the interface infomation
++     */
++    public synchronized void updateDevInfo(EthernetDevInfo info) {
++        final ContentResolver cr = mContext.getContentResolver();
++        Settings.Secure.putInt(cr, Settings.Secure.ETHERNET_CONF, 1);
++        Settings.Secure.putString(cr, Settings.Secure.ETHERNET_IFNAME, info.getIfName());
++        Settings.Secure.putString(cr, Settings.Secure.ETHERNET_IP, info.getIpAddress());
++        Settings.Secure.putString(cr, Settings.Secure.ETHERNET_MODE, info.getConnectMode());
++        Settings.Secure.putString(cr, Settings.Secure.ETHERNET_DNS, info.getDnsAddr());
++        Settings.Secure.putString(cr, Settings.Secure.ETHERNET_ROUTE, info.getRouteAddr());
++        Settings.Secure.putString(cr, Settings.Secure.ETHERNET_MASK, info.getNetMask());
++        if (mEthState == EthernetManager.ETHERNET_STATE_ENABLED) {
++            try {
++                mTracker.resetInterface();
++            } catch (UnknownHostException e) {
++                Slog.e(TAG, "Wrong ethernet configuration");
++            }
++        }
++    }
++
++    /**
++     * get the number of ethernet interfaces in the system
++     * @return the number of ethernet interfaces
++     */
++    public int getTotalInterface() {
++        return EthernetNative.getInterfaceCnt();
++    }
++
++
++    private int scanDevice() {
++        int i, j;
++        if ((i = EthernetNative.getInterfaceCnt()) == 0)
++            return 0;
++
++        DevName = new String[i];
++
++        for (j = 0; j < i; j++) {
++            DevName[j] = EthernetNative.getInterfaceName(j);
++            if (DevName[j] == null)
++                break;
++            if (localLOGV) Slog.v(TAG, "device " + j + " name " + DevName[j]);
++        }
++
++        return i;
++    }
++
++    /**
++     * get all the ethernet device names
++     * @return interface name list on success, {@code null} on failure
++     */
++    public String[] getDeviceNameList() {
++        return (scanDevice() > 0) ? DevName : null;
++    }
++
++    private int getPersistedState() {
++        final ContentResolver cr = mContext.getContentResolver();
++        try {
++            return Settings.Secure.getInt(cr, Settings.Secure.ETHERNET_ON);
++        } catch (Settings.SettingNotFoundException e) {
++            return EthernetManager.ETHERNET_STATE_UNKNOWN;
++        }
++    }
++
++    private synchronized void persistEnabled(boolean enabled) {
++        final ContentResolver cr = mContext.getContentResolver();
++        Settings.Secure.putInt(cr, Settings.Secure.ETHERNET_ON, enabled ? EthernetManager.ETHERNET_STATE_ENABLED : EthernetManager.ETHERNET_STATE_DISABLED);
++    }
++
++    /**
++     * Enable or Disable a ethernet service
++     * @param enable {@code true} to enable, {@code false} to disable
++     */
++    public synchronized void setState(int state) {
++
++        if (mEthState != state) {
++            mEthState = state;
++            if (state == EthernetManager.ETHERNET_STATE_DISABLED) {
++                persistEnabled(false);
++                mTracker.stopInterface(false);
++            } else {
++                persistEnabled(true);
++                if (!isConfigured()) {
++                    // If user did not configure any interfaces yet, pick the first one
++                    // and enable it.
++                    setMode(EthernetDevInfo.ETHERNET_CONN_MODE_DHCP);
++                }
++                try {
++                    mTracker.resetInterface();
++                } catch (UnknownHostException e) {
++                    Slog.e(TAG, "Wrong ethernet configuration");
++                }
++            }
++        }
++    }
++
++    /**
++     * Get ethernet service state
++     * @return the state of the ethernet service
++     */
++    public int getState( ) {
++        return mEthState;
++    }
++
++}
+-- 
+1.7.4.1
+

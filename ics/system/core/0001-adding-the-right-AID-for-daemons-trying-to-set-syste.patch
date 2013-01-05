@@ -1,0 +1,30 @@
+From 12c0b28b2a2d8f617d53851fe95918ed36ee778c Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 7 Aug 2012 14:21:22 +0200
+Subject: [PATCH] adding the right AID for daemons trying to set system properties
+
+---
+ init/property_service.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/init/property_service.c b/init/property_service.c
+index 828b7fc..74b9a6e 100644
+--- a/init/property_service.c
++++ b/init/property_service.c
+@@ -73,11 +73,13 @@ struct {
+     { "dev.",             AID_SYSTEM,   0 },
+     { "runtime.",         AID_SYSTEM,   0 },
+     { "hw.",              AID_SYSTEM,   0 },
++    { "rw.",              AID_SYSTEM,   0 },
+     { "sys.",             AID_SYSTEM,   0 },
+     { "service.",         AID_SYSTEM,   0 },
+     { "wlan.",            AID_SYSTEM,   0 },
+     { "dhcp.",            AID_SYSTEM,   0 },
+     { "dhcp.",            AID_DHCP,     0 },
++    { "net.",             AID_DHCP,     0 },
+     { "debug.",           AID_SHELL,    0 },
+     { "log.",             AID_SHELL,    0 },
+     { "service.adb.root", AID_SHELL,    0 },
+-- 
+1.7.4.1
+

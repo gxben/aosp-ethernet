@@ -1,0 +1,36 @@
+From ae98531a45d11b4962b995255227894cbdc64cb0 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 7 Aug 2012 14:34:00 +0200
+Subject: [PATCH 36/50] Adding new NTP_SERVER system setting
+
+---
+ core/java/android/provider/Settings.java |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 60fef1e..61c8b39 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -1650,6 +1650,11 @@ public final class Settings {
+         public static final String AUTO_TIME = "auto_time";
+ 
+         /**
++         * Value for NTP Server
++         */
++        public static final String NTP_SERVER = "ntp_server";
++
++        /**
+          * Value to specify if the user prefers the time zone
+          * to be automatically fetched from the network (NITZ). 1=yes, 0=no
+          */
+@@ -1972,6 +1977,7 @@ public final class Settings {
+             TEXT_AUTO_PUNCTUATE,
+             TEXT_SHOW_PASSWORD,
+             AUTO_TIME,
++            NTP_SERVER,
+             AUTO_TIME_ZONE,
+             TIME_12_24,
+             DATE_FORMAT,
+-- 
+1.7.4.1
+

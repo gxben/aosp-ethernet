@@ -1,0 +1,114 @@
+From b57e076d3765db233a0ff22208c11b5819cd2c20 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 17 Jul 2012 14:56:51 +0200
+Subject: [PATCH 23/50] Adding static configuration to Ethernet Connectivity Manager
+
+---
+ .../android/net/ethernet/EthernetStateTracker.java |   32 +++++++++++++-------
+ 1 files changed, 21 insertions(+), 11 deletions(-)
+
+diff --git a/ethernet/java/android/net/ethernet/EthernetStateTracker.java b/ethernet/java/android/net/ethernet/EthernetStateTracker.java
+index 861f17d..1e57a76 100644
+--- a/ethernet/java/android/net/ethernet/EthernetStateTracker.java
++++ b/ethernet/java/android/net/ethernet/EthernetStateTracker.java
+@@ -19,6 +19,7 @@
+ package android.net.ethernet;
+ 
+ import java.net.InetAddress;
++import java.net.Inet4Address;
+ import java.net.UnknownHostException;
+ 
+ import android.R;
+@@ -32,8 +33,11 @@ import android.content.IntentFilter;
+ import android.content.BroadcastReceiver;
+ import android.net.LinkCapabilities;
+ import android.net.LinkProperties;
++import android.net.LinkAddress;
++import android.net.RouteInfo;
+ import android.net.ConnectivityManager;
+ import android.net.DhcpInfoInternal;
++import android.net.DhcpInfo;
+ import android.net.NetworkStateTracker;
+ import android.net.NetworkUtils;
+ import android.net.LinkCapabilities;
+@@ -141,10 +145,12 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+     }
+ 
+     private boolean configureInterface(EthernetDevInfo info) throws UnknownHostException {
++        DhcpInfo infoDhcp = new DhcpInfo();
+         mStackConnected = false;
+         mHWConnected = false;
+         mInterfaceStopped = false;
+         mStartingDhcp = true;
++        NetworkUtils.resetConnections(info.getIfName(), NetworkUtils.RESET_ALL_ADDRESSES);
+         if (info.getConnectMode().equals(EthernetDevInfo.ETHERNET_CONN_MODE_DHCP)) {
+             if (localLOGV) Slog.i(TAG, "trigger dhcp for device " + info.getIfName());
+             sDnsPropNames = new String[] {
+@@ -154,21 +160,23 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+ 
+             mDhcpTarget.sendEmptyMessage(EVENT_DHCP_START);
+         } else {
+-/* HFM
+             int event;
+             sDnsPropNames = new String[] {
+                 "net." + mInterfaceName + ".dns1",
+                 "net." + mInterfaceName + ".dns2"
+              };
+-            mDhcpInfo.ipAddress = lookupHost(info.getIpAddress());
+-            mDhcpInfo.gateway = lookupHost(info.getRouteAddr());
+-            mDhcpInfo.netmask = lookupHost(info.getNetMask());
+-            mDhcpInfo.dns1 = lookupHost(info.getDnsAddr());
+-            mDhcpInfo.dns2 = 0;
++            mDhcpInfo.ipAddress = info.getIpAddress();
++            mDhcpInfo.prefixLength = NetworkUtils.netmaskIntToPrefixLength(lookupHost(info.getNetMask()));
++            LinkAddress linkAddress = new LinkAddress(Inet4Address.ANY, mDhcpInfo.prefixLength);
++            InetAddress gatewayAddress = NetworkUtils.intToInetAddress(lookupHost(info.getRouteAddr()));
++            RouteInfo defaultRoute = new RouteInfo(gatewayAddress);
++            mDhcpInfo.addRoute(defaultRoute);
++            mDhcpInfo.dns1 = info.getDnsAddr();
++            mDhcpInfo.dns2 = "0.0.0.0";
++            infoDhcp = mDhcpInfo.makeDhcpInfo();
+ 
+             if (localLOGV) Slog.i(TAG, "set ip manually " + mDhcpInfo.toString());
+-            NetworkUtils.removeDefaultRoute(info.getIfName());
+-            if (NetworkUtils.configureInterface(info.getIfName(), mDhcpInfo)) {
++            if (NetworkUtils.configureInterface(info.getIfName(), infoDhcp)) {
+                 event = EVENT_INTERFACE_CONFIGURATION_SUCCEEDED;
+                 SystemProperties.set("net.dns1", info.getDnsAddr());
+ 		SystemProperties.set("net." + info.getIfName() + ".dns1", info.getDnsAddr());
+@@ -179,7 +187,6 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+                 if (localLOGV) Slog.w(TAG, "Static IP configuration failed");
+             }
+             this.sendEmptyMessage(event);
+-*/
+         }
+         return true;
+     }
+@@ -377,7 +384,7 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+ 
+          public void handleMessage(Message msg) {
+              int event;
+-
++             DhcpInfo infoDhcp = new DhcpInfo();
+              switch (msg.what) {
+                  case EVENT_DHCP_START:
+                      synchronized (mDhcpTarget) {
+@@ -385,11 +392,14 @@ public class EthernetStateTracker extends Handler implements NetworkStateTracker
+                              if (localLOGV) Slog.d(TAG, "DhcpHandler: DHCP request started");
+                              if (NetworkUtils.runDhcp(mInterfaceName, mDhcpInfo)) {
+                                  event = EVENT_INTERFACE_CONFIGURATION_SUCCEEDED;
+-                                 //FBR : patch for handling DHCP DNS. Hardcoded for the moment 
+ 				 //SystemProperties.set("net.dns1", mDhcpInfo.dns1);
+ 				 SystemProperties.set("net.dns1", "155.132.205.13");
+                 		 SystemProperties.set("net." + mInterfaceName + ".dns1", mDhcpInfo.dns1);
+     				 if (localLOGV) Slog.d(TAG, "DhcpHandler: DHCP request succeeded: " + mDhcpInfo.toString());
++                                 infoDhcp = mDhcpInfo.makeDhcpInfo();
++                                 if (!NetworkUtils.configureInterface(mInterfaceName, infoDhcp)) {
++                                     event = EVENT_INTERFACE_CONFIGURATION_FAILED;
++                                 }
+                              } else {
+                                  event = EVENT_INTERFACE_CONFIGURATION_FAILED;
+                                  Slog.e(TAG, "DhcpHandler: DHCP request failed: " + NetworkUtils.getDhcpError());
+-- 
+1.7.4.1
+

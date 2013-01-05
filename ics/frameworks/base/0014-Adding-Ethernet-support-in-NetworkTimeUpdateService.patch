@@ -1,0 +1,44 @@
+From 325d7c74cb41d4c97dd92b0d21d97667f7e7f683 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 21 Jun 2012 17:20:49 +0200
+Subject: [PATCH 14/50] Adding Ethernet support in NetworkTimeUpdateService
+
+---
+ .../android/server/NetworkTimeUpdateService.java   |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/services/java/com/android/server/NetworkTimeUpdateService.java b/services/java/com/android/server/NetworkTimeUpdateService.java
+index f7fe39e..f1725d6 100644
+--- a/services/java/com/android/server/NetworkTimeUpdateService.java
++++ b/services/java/com/android/server/NetworkTimeUpdateService.java
+@@ -56,6 +56,7 @@ public class NetworkTimeUpdateService {
+     private static final int EVENT_AUTO_TIME_CHANGED = 1;
+     private static final int EVENT_POLL_NETWORK_TIME = 2;
+     private static final int EVENT_WIFI_CONNECTED = 3;
++    private static final int EVENT_ETHERNET_CONNECTED = 4;
+ 
+     /** Normal polling frequency */
+     private static final long POLLING_INTERVAL_MS = 24L * 60 * 60 * 1000; // 24 hrs
+@@ -242,6 +243,11 @@ public class NetworkTimeUpdateService {
+                             netInfo.getType() == ConnectivityManager.TYPE_WIFI ) {
+                         mHandler.obtainMessage(EVENT_WIFI_CONNECTED).sendToTarget();
+                     }
++		    //Patch for ethernet	
++		    if (netInfo.getState() == NetworkInfo.State.CONNECTED &&
++                            netInfo.getType() == ConnectivityManager.TYPE_ETHERNET ) {
++                        mHandler.obtainMessage(EVENT_ETHERNET_CONNECTED).sendToTarget();
++                    }
+                 }
+             }
+         }
+@@ -260,6 +266,7 @@ public class NetworkTimeUpdateService {
+                 case EVENT_AUTO_TIME_CHANGED:
+                 case EVENT_POLL_NETWORK_TIME:
+                 case EVENT_WIFI_CONNECTED:
++		case EVENT_ETHERNET_CONNECTED: 
+                     onPollNetworkTime(msg.what);
+                     break;
+             }
+-- 
+1.7.4.1
+

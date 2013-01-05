@@ -1,0 +1,243 @@
+From 2e6f3d67b25f76cd11ef9791144b67cfc9f54cae Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 21 Jun 2012 17:16:04 +0200
+Subject: [PATCH 08/50] Defining default network connection to Ethernet in Android API description files
+
+---
+ api/1.xml       |    2 +-
+ api/10.xml      |    2 +-
+ api/11.xml      |    2 +-
+ api/12.xml      |    2 +-
+ api/13.xml      |    2 +-
+ api/14.txt      |    2 +-
+ api/15.txt      |    2 +-
+ api/2.xml       |    2 +-
+ api/3.xml       |    2 +-
+ api/4.xml       |    2 +-
+ api/5.xml       |    2 +-
+ api/6.xml       |    2 +-
+ api/7.xml       |    2 +-
+ api/8.xml       |    2 +-
+ api/9.xml       |    2 +-
+ api/current.txt |    3 ++-
+ 16 files changed, 17 insertions(+), 16 deletions(-)
+
+diff --git a/api/1.xml b/api/1.xml
+index 8456bda..5c21165 100644
+--- a/api/1.xml
++++ b/api/1.xml
+@@ -59112,7 +59112,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/10.xml b/api/10.xml
+index 08df93b..0d3295b 100644
+--- a/api/10.xml
++++ b/api/10.xml
+@@ -93194,7 +93194,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/11.xml b/api/11.xml
+index beb82b2..0675750 100644
+--- a/api/11.xml
++++ b/api/11.xml
+@@ -110851,7 +110851,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/12.xml b/api/12.xml
+index e98be45..faba113 100644
+--- a/api/12.xml
++++ b/api/12.xml
+@@ -113987,7 +113987,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/13.xml b/api/13.xml
+index 73995de..aaab9ac 100644
+--- a/api/13.xml
++++ b/api/13.xml
+@@ -114898,7 +114898,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/14.txt b/api/14.txt
+index 92969f6..8d2dc5c 100644
+--- a/api/14.txt
++++ b/api/14.txt
+@@ -11552,7 +11552,7 @@ package android.net {
+     method public int stopUsingNetworkFeature(int, java.lang.String);
+     field public static final java.lang.String ACTION_BACKGROUND_DATA_SETTING_CHANGED = "android.net.conn.BACKGROUND_DATA_SETTING_CHANGED";
+     field public static final java.lang.String CONNECTIVITY_ACTION = "android.net.conn.CONNECTIVITY_CHANGE";
+-    field public static final int DEFAULT_NETWORK_PREFERENCE = 1; // 0x1
++    field public static final int DEFAULT_NETWORK_PREFERENCE = 9; // 0x9
+     field public static final java.lang.String EXTRA_EXTRA_INFO = "extraInfo";
+     field public static final java.lang.String EXTRA_IS_FAILOVER = "isFailover";
+     field public static final deprecated java.lang.String EXTRA_NETWORK_INFO = "networkInfo";
+diff --git a/api/15.txt b/api/15.txt
+index 68fb4bc..33179c0 100644
+--- a/api/15.txt
++++ b/api/15.txt
+@@ -11591,7 +11591,7 @@ package android.net {
+     method public int stopUsingNetworkFeature(int, java.lang.String);
+     field public static final java.lang.String ACTION_BACKGROUND_DATA_SETTING_CHANGED = "android.net.conn.BACKGROUND_DATA_SETTING_CHANGED";
+     field public static final java.lang.String CONNECTIVITY_ACTION = "android.net.conn.CONNECTIVITY_CHANGE";
+-    field public static final int DEFAULT_NETWORK_PREFERENCE = 1; // 0x1
++    field public static final int DEFAULT_NETWORK_PREFERENCE = 9; // 0x9
+     field public static final java.lang.String EXTRA_EXTRA_INFO = "extraInfo";
+     field public static final java.lang.String EXTRA_IS_FAILOVER = "isFailover";
+     field public static final deprecated java.lang.String EXTRA_NETWORK_INFO = "networkInfo";
+diff --git a/api/2.xml b/api/2.xml
+index fdfd41c..1418c4c 100644
+--- a/api/2.xml
++++ b/api/2.xml
+@@ -59145,7 +59145,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/3.xml b/api/3.xml
+index 8d2240c..a2a41bc 100644
+--- a/api/3.xml
++++ b/api/3.xml
+@@ -68596,7 +68596,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/4.xml b/api/4.xml
+index 36592ee..0458de0 100644
+--- a/api/4.xml
++++ b/api/4.xml
+@@ -72983,7 +72983,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/5.xml b/api/5.xml
+index b7d5906..ebe59ce 100644
+--- a/api/5.xml
++++ b/api/5.xml
+@@ -81997,7 +81997,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/6.xml b/api/6.xml
+index 133f95e..b812aa7 100644
+--- a/api/6.xml
++++ b/api/6.xml
+@@ -82067,7 +82067,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/7.xml b/api/7.xml
+index 174d947..dce93cb 100644
+--- a/api/7.xml
++++ b/api/7.xml
+@@ -82586,7 +82586,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/8.xml b/api/8.xml
+index 225ea91..84fab98 100644
+--- a/api/8.xml
++++ b/api/8.xml
+@@ -87537,7 +87537,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/9.xml b/api/9.xml
+index c724b70..da6970c 100644
+--- a/api/9.xml
++++ b/api/9.xml
+@@ -92578,7 +92578,7 @@
+  type="int"
+  transient="false"
+  volatile="false"
+- value="1"
++ value="9"
+  static="true"
+  final="true"
+  deprecated="not deprecated"
+diff --git a/api/current.txt b/api/current.txt
+index 92a90cf..36f76a2 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -11614,7 +11614,7 @@ package android.net {
+     method public int stopUsingNetworkFeature(int, java.lang.String);
+     field public static final java.lang.String ACTION_BACKGROUND_DATA_SETTING_CHANGED = "android.net.conn.BACKGROUND_DATA_SETTING_CHANGED";
+     field public static final java.lang.String CONNECTIVITY_ACTION = "android.net.conn.CONNECTIVITY_CHANGE";
+-    field public static final int DEFAULT_NETWORK_PREFERENCE = 1; // 0x1
++    field public static final int DEFAULT_NETWORK_PREFERENCE = 9; // 0x9
+     field public static final java.lang.String EXTRA_EXTRA_INFO = "extraInfo";
+     field public static final java.lang.String EXTRA_IS_FAILOVER = "isFailover";
+     field public static final deprecated java.lang.String EXTRA_NETWORK_INFO = "networkInfo";
+@@ -12267,6 +12267,7 @@ package android.net.sip {
+     method public boolean isOpened(java.lang.String) throws android.net.sip.SipException;
+     method public boolean isRegistered(java.lang.String) throws android.net.sip.SipException;
+     method public static boolean isSipWifiOnly(android.content.Context);
++    method public static boolean isSipEthernet(android.content.Context);
+     method public static boolean isVoipSupported(android.content.Context);
+     method public android.net.sip.SipAudioCall makeAudioCall(android.net.sip.SipProfile, android.net.sip.SipProfile, android.net.sip.SipAudioCall.Listener, int) throws android.net.sip.SipException;
+     method public android.net.sip.SipAudioCall makeAudioCall(java.lang.String, java.lang.String, android.net.sip.SipAudioCall.Listener, int) throws android.net.sip.SipException;
+-- 
+1.7.4.1
+

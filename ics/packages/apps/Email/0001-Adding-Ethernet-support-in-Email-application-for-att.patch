@@ -1,0 +1,41 @@
+From 21c71171542f6cdc9b7b531546ad131e485d8c13 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 21 Jun 2012 17:10:26 +0200
+Subject: [PATCH] Adding Ethernet support in Email application for attachment handling
+
+---
+ src/com/android/email/AttachmentInfo.java          |    3 ++-
+ .../email/service/AttachmentDownloadService.java   |    3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/email/AttachmentInfo.java b/src/com/android/email/AttachmentInfo.java
+index cedb63e..1f01cbf 100644
+--- a/src/com/android/email/AttachmentInfo.java
++++ b/src/com/android/email/AttachmentInfo.java
+@@ -160,7 +160,8 @@ public class AttachmentInfo {
+         // The size limit is overridden when on a wifi connection - any size is OK
+         if (mSize > AttachmentUtilities.MAX_ATTACHMENT_DOWNLOAD_SIZE) {
+             int networkType = EmailConnectivityManager.getActiveNetworkType(context);
+-            if (networkType != ConnectivityManager.TYPE_WIFI) {
++            if ((networkType != ConnectivityManager.TYPE_ETHERNET) && (networkType != ConnectivityManager.TYPE_WIFI)) {
++ 
+                 canView = false;
+                 canSave = false;
+                 denyFlags |= DENY_WIFIONLY;
+diff --git a/src/com/android/email/service/AttachmentDownloadService.java b/src/com/android/email/service/AttachmentDownloadService.java
+index 18468fb..64d9f2e 100644
+--- a/src/com/android/email/service/AttachmentDownloadService.java
++++ b/src/com/android/email/service/AttachmentDownloadService.java
+@@ -341,7 +341,8 @@ public class AttachmentDownloadService extends Service implements Runnable {
+             if (ecm == null) return;
+             if (!ecm.isAutoSyncAllowed()) return;
+             // Don't prefetch unless we're on a WiFi network
+-            if (ecm.getActiveNetworkType() != ConnectivityManager.TYPE_WIFI) {
++            if ((ecm.getActiveNetworkType() != ConnectivityManager.TYPE_ETHERNET) && (ecm.getActiveNetworkType() != ConnectivityManager.TYPE_WIFI)) {
++ 
+                 return;
+             }
+             // Then, try opportunistic download of appropriate attachments
+-- 
+1.7.4.1
+

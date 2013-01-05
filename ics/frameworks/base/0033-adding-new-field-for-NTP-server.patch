@@ -1,0 +1,24 @@
+From c3a31c35338651fea5f7064cd2e04d9d2be89304 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 7 Aug 2012 14:30:48 +0200
+Subject: [PATCH 33/50] adding new field for NTP server
+
+---
+ api/current.txt |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/api/current.txt b/api/current.txt
+index b6bd229..6640949 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -17681,6 +17681,7 @@ package android.provider {
+     field public static final deprecated java.lang.String NETWORK_PREFERENCE = "network_preference";
+     field public static final java.lang.String NEXT_ALARM_FORMATTED = "next_alarm_formatted";
+     field public static final java.lang.String NOTIFICATION_SOUND = "notification_sound";
++    field public static final java.lang.String NTP_SERVER = "ntp_server";
+     field public static final deprecated java.lang.String PARENTAL_CONTROL_ENABLED = "parental_control_enabled";
+     field public static final deprecated java.lang.String PARENTAL_CONTROL_LAST_UPDATE = "parental_control_last_update";
+     field public static final deprecated java.lang.String PARENTAL_CONTROL_REDIRECT_URL = "parental_control_redirect_url";
+-- 
+1.7.4.1
+

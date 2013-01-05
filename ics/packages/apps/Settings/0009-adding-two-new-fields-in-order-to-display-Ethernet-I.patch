@@ -1,0 +1,65 @@
+From cd7c43fef72d6ea1e52da3ece00e667bad934250 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 3 Aug 2012 10:50:43 +0200
+Subject: [PATCH 09/19] adding two new fields in order to display Ethernet IP and MAC address
+
+---
+ res/values/strings.xml         |    9 +++++++--
+ res/xml/device_info_status.xml |   12 +++++++++++-
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 09638cd..982a84d 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -1357,10 +1357,13 @@
+     <!-- Wi-Fi settings screen, error message when the frequency band could not be set [CHAR LIMIT=50]. -->
+     <string name="wifi_setting_frequency_band_error">There was a problem setting the frequency band.</string>
+     <!-- Wi-Fi settings screen, advanced, title of the item to show the Wi-Fi device's MAC address. -->
+-    <string name="wifi_advanced_mac_address_title">MAC address</string>
++    <string name="wifi_advanced_mac_address_title">Wi-Fi MAC address</string>
+     <!-- Title of the screen to adjust IP settings -->
+     <!-- Wi-Fi settings screen, advanced, title of the item to show the Wi-Fi device's current IP address. -->
+-    <string name="wifi_advanced_ip_address_title">IP address</string>
++    <string name="wifi_advanced_ip_address_title">Wi-Fi IP address</string>
++
++    <!-- Ethernet settings screen, advanced, title of the item to show the Ethernet device's current IP address. -->
++    <string name="ethernet_advanced_ip_address_title">Ethernet IP address</string>
+ 
+     <!-- Wifi Advanced settings.  Used as a label under the shortcut icon that goes to Wifi advanced settings. [CHAR LIMIT=20]-->
+     <string name="wifi_advanced_settings_label">IP settings</string>
+@@ -1870,6 +1873,8 @@
+     <string name="status_operator">Network</string>
+     <!-- About phone, status item title.  The MAC address of the Wi-Fi network adapter. -->
+     <string name="status_wifi_mac_address">Wi-Fi MAC address</string>
++    <!-- About phone, status item title.  The MAC address of the Ethernet network adapter. -->
++    <string name="status_ethernet_mac_address">Ethernet MAC address</string>
+     <!-- About phone, status item title.  The bluetooth adapter's hardware address-->
+     <string name="status_bt_address">Bluetooth address</string>
+     <!-- About phone, status item title.  The hardware serial number. [CHAR LIMIT=30]-->
+diff --git a/res/xml/device_info_status.xml b/res/xml/device_info_status.xml
+index aaa90a9..0c7b7b7 100644
+--- a/res/xml/device_info_status.xml
++++ b/res/xml/device_info_status.xml
+@@ -105,7 +105,17 @@
+         android:title="@string/status_wifi_mac_address"
+         android:summary="@string/device_info_not_available"
+         android:persistent="false" />
+-    <Preference android:key="bt_address"
++    <Preference android:key="ethernet_ip_address"
++        style="?android:attr/preferenceInformationStyle"
++        android:title="@string/ethernet_advanced_ip_address_title"
++        android:summary="@string/device_info_not_available"
++        android:persistent="false" />
++    <Preference android:key="ethernet_mac_address"
++        style="?android:attr/preferenceInformationStyle"
++        android:title="@string/status_ethernet_mac_address"
++        android:summary="@string/device_info_not_available"
++        android:persistent="false" />
++     <Preference android:key="bt_address"
+         style="?android:attr/preferenceInformationStyle"
+         android:title="@string/status_bt_address"
+         android:summary="@string/device_info_not_available"
+-- 
+1.7.4.1
+

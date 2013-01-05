@@ -1,0 +1,100 @@
+From f03c34bb1bf6cbb34e587a654f1b2c10136b66c0 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Fri, 3 Aug 2012 10:55:46 +0200
+Subject: [PATCH 31/50] adding function to retrieve eth0 MAC address
+
+---
+ core/jni/android_net_ethernet.cpp                  |   50 ++++++++++++++++++++
+ .../java/android/net/ethernet/EthernetNative.java  |    1 +
+ 2 files changed, 51 insertions(+), 0 deletions(-)
+
+diff --git a/core/jni/android_net_ethernet.cpp b/core/jni/android_net_ethernet.cpp
+index f540b30..d0d9a6f 100644
+--- a/core/jni/android_net_ethernet.cpp
++++ b/core/jni/android_net_ethernet.cpp
+@@ -35,6 +35,14 @@
+ #include <string.h>
+ #include <dirent.h>
+ 
++#include <stdio.h>
++#include <stdlib.h>
++#include <net/if.h>
++#include <sys/ioctl.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++
++
+ 
+ #define ETH_PKG_NAME     "android/net/ethernet/EthernetNative"
+ #define NL_SOCK_INV      -1
+@@ -362,6 +370,46 @@ namespace android {
+     }
+ 
+ 
++    static jstring android_net_ethernet_getInterfaceMacAddress(JNIEnv *env,
++                                                         jobject clazz)
++    {
++        int sock = -1;
++        char *buf;
++        unsigned char *ptr;
++        struct ifreq ifr;
++
++        sock = socket (AF_INET, SOCK_STREAM, 0);
++        if (sock < 0)
++        {
++            LOGE("socket");
++            return env->NewStringUTF(NULL);
++        }
++
++        strcpy (ifr.ifr_name, "eth0");
++        strcpy (ifr.ifr_hwaddr.sa_data, "");
++
++        if (ioctl (sock, SIOCGIFHWADDR, &ifr) < 0)
++        {
++            LOGE("ioctl");
++            return env->NewStringUTF(NULL);
++        }
++
++        buf = (char *) malloc (64 * sizeof (char));
++        memset (buf, 0, 64);
++        ptr = (unsigned char *) ifr.ifr_hwaddr.sa_data;
++
++        snprintf (buf, 64, "%02x:%02x:%02x:%02x:%02x:%02x",
++             (ptr[0] & 0377), (ptr[1] & 0377), (ptr[2] & 0377),
++             (ptr[3] & 0377), (ptr[4] & 0377), (ptr[5] & 0377));
++
++        if (sock)
++            close (sock);
++
++        LOGI("MAC Address: %s\n", buf);
++
++        return env->NewStringUTF(buf);
++    }
++
+     static jint android_net_ethernet_getInterfaceCnt()
+     {
+         return total_int;
+@@ -370,6 +418,8 @@ namespace android {
+     static JNINativeMethod gEthernetMethods[] = {
+         {"waitForEvent", "()Ljava/lang/String;",
+          (void *)android_net_ethernet_waitForEvent},
++        {"getInterfaceMacAddress", "()Ljava/lang/String;",
++         (void *)android_net_ethernet_getInterfaceMacAddress},
+         {"getInterfaceName", "(I)Ljava/lang/String;",
+          (void *)android_net_ethernet_getInterfaceName},
+         {"initEthernetNative", "()I",
+diff --git a/ethernet/java/android/net/ethernet/EthernetNative.java b/ethernet/java/android/net/ethernet/EthernetNative.java
+index 7f3a083..35fe902 100644
+--- a/ethernet/java/android/net/ethernet/EthernetNative.java
++++ b/ethernet/java/android/net/ethernet/EthernetNative.java
+@@ -24,6 +24,7 @@ package android.net.ethernet;
+  */
+ public class EthernetNative {
+     public native static String getInterfaceName(int i);
++    public native static String getInterfaceMacAddress();
+     public native static int getInterfaceCnt();
+     public native static int initEthernetNative();
+     public native static String waitForEvent();
+-- 
+1.7.4.1
+

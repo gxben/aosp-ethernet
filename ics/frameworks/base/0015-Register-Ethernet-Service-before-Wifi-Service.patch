@@ -1,0 +1,44 @@
+From 76f0f6fae4691946b16d66ba7958b9a7dc7107cc Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 26 Jun 2012 13:36:10 +0200
+Subject: [PATCH 15/50] Register Ethernet Service before Wifi Service
+
+---
+ core/java/android/app/ContextImpl.java |   14 +++++++-------
+ 1 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/core/java/android/app/ContextImpl.java b/core/java/android/app/ContextImpl.java
+index 826c243..a9c3c35 100644
+--- a/core/java/android/app/ContextImpl.java
++++ b/core/java/android/app/ContextImpl.java
+@@ -444,6 +444,13 @@ class ContextImpl extends Context {
+ 
+         registerService(WALLPAPER_SERVICE, WALLPAPER_FETCHER);
+ 
++        registerService(ETHERNET_SERVICE, new ServiceFetcher() {
++                public Object createService(ContextImpl ctx) {
++                    IBinder b = ServiceManager.getService(ETHERNET_SERVICE);
++                    IEthernetManager service = IEthernetManager.Stub.asInterface(b);
++                    return new EthernetManager(service, ctx.mMainThread.getHandler());
++                }});
++
+         registerService(WIFI_SERVICE, new ServiceFetcher() {
+                 public Object createService(ContextImpl ctx) {
+                     IBinder b = ServiceManager.getService(WIFI_SERVICE);
+@@ -458,13 +465,6 @@ class ContextImpl extends Context {
+                     return new WifiP2pManager(service);
+                 }});
+ 
+-        registerService(ETHERNET_SERVICE, new ServiceFetcher() {
+-                public Object createService(ContextImpl ctx) {
+-                    IBinder b = ServiceManager.getService(ETHERNET_SERVICE);
+-                    IEthernetManager service = IEthernetManager.Stub.asInterface(b);
+-                    return new EthernetManager(service, ctx.mMainThread.getHandler());
+-                }});
+-
+         registerService(WINDOW_SERVICE, new ServiceFetcher() {
+                 public Object getService(ContextImpl ctx) {
+                     return WindowManagerImpl.getDefault(ctx.mPackageInfo.mCompatibilityInfo);
+-- 
+1.7.4.1
+

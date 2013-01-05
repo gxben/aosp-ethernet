@@ -1,0 +1,26 @@
+From 9088b9f58168c6d7510897b626d39586e0776052 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Tue, 7 Aug 2012 14:33:13 +0200
+Subject: [PATCH 35/50] Creating NTP server field in system database at startup
+
+---
+ .../android/providers/settings/DatabaseHelper.java |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java b/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
+index bc7baf3..1280005 100644
+--- a/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
++++ b/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
+@@ -1424,6 +1424,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
+             loadBooleanSetting(stmt, Settings.System.AUTO_TIME,
+                     R.bool.def_auto_time); // Sync time to NITZ
+ 
++            loadStringSetting(stmt, Settings.System.NTP_SERVER,
++                    com.android.internal.R.string.config_ntpServer);
++
+             loadBooleanSetting(stmt, Settings.System.AUTO_TIME_ZONE,
+                     R.bool.def_auto_time_zone); // Sync timezone to NITZ
+ 
+-- 
+1.7.4.1
+

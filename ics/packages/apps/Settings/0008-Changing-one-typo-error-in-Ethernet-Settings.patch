@@ -1,0 +1,39 @@
+From 98d5efbdd0c52be523376004d2c8d93268844b36 Mon Sep 17 00:00:00 2001
+From: Fabien Brisset <fabien.brisset@alcatel-lucent.com>
+Date: Thu, 12 Jul 2012 13:41:46 +0200
+Subject: [PATCH 08/19] Changing one typo error in Ethernet Settings
+
+---
+ .../settings/ethernet/EthernetConfigDialog.java    |    2 +-
+ .../settings/ethernet/EthernetSettings.java        |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/settings/ethernet/EthernetConfigDialog.java b/src/com/android/settings/ethernet/EthernetConfigDialog.java
+index 7c1edd7..f6154bc 100644
+--- a/src/com/android/settings/ethernet/EthernetConfigDialog.java
++++ b/src/com/android/settings/ethernet/EthernetConfigDialog.java
+@@ -45,7 +45,7 @@ import android.util.Slog;
+ 
+ public class EthernetConfigDialog extends AlertDialog implements
+         DialogInterface.OnClickListener, AdapterView.OnItemSelectedListener, View.OnClickListener {
+-    private final String TAG = "EtherenetSettings";
++    private final String TAG = "EthernetSettings";
+     private static final boolean localLOGV = true;
+ 
+     private EthernetEnabler mEthEnabler;
+diff --git a/src/com/android/settings/ethernet/EthernetSettings.java b/src/com/android/settings/ethernet/EthernetSettings.java
+index 33ee2e3..015934a 100644
+--- a/src/com/android/settings/ethernet/EthernetSettings.java
++++ b/src/com/android/settings/ethernet/EthernetSettings.java
+@@ -66,7 +66,7 @@ public class EthernetSettings extends SettingsPreferenceFragment {
+         mEthConfigPref = preferenceScreen.findPreference(KEY_CONF_ETH);
+         /*
+          * TO DO:
+-         * Add new perference screen for Etherenet Configuration
++         * Add new perference screen for Ethernet Configuration
+          */
+ 
+         initToggles();
+-- 
+1.7.4.1
+
