@@ -1,0 +1,17 @@
+diff --git a/src/com/android/phone/SipCallOptionHandler.java b/src/com/android/phone/SipCallOptionHandler.java
+index 500f322..d802049 100644
+--- a/src/com/android/phone/SipCallOptionHandler.java
++++ b/src/com/android/phone/SipCallOptionHandler.java
+@@ -406,8 +406,10 @@ public class SipCallOptionHandler extends Activity implements
+             NetworkInfo ni = cm.getActiveNetworkInfo();
+             if ((ni == null) || !ni.isConnected()) return false;
+ 
+-            return ((ni.getType() == ConnectivityManager.TYPE_WIFI)
+-                    || !SipManager.isSipWifiOnly(this));
++            return (((ni.getType() == ConnectivityManager.TYPE_WIFI)
++		     || !SipManager.isSipWifiOnly(this))) ||
++		   (((ni.getType() == ConnectivityManager.TYPE_ETHERNET)
++		     || !SipManager.isSipEthernetOnly(this)));
+         }
+         return false;
+     }

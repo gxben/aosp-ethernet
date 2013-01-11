@@ -1,0 +1,32 @@
+diff --git a/src/com/android/email/AttachmentInfo.java b/src/com/android/email/AttachmentInfo.java
+index b6751b5..b1f0a9d 100644
+--- a/src/com/android/email/AttachmentInfo.java
++++ b/src/com/android/email/AttachmentInfo.java
+@@ -157,10 +157,10 @@ public class AttachmentInfo {
+         }
+ 
+         // Check for file size exceeded
+-        // The size limit is overridden when on a wifi connection - any size is OK
++        // The size limit is overridden when on a wifi or ethernet connection - any size is OK
+         if (mSize > AttachmentUtilities.MAX_ATTACHMENT_DOWNLOAD_SIZE) {
+             int networkType = EmailConnectivityManager.getActiveNetworkType(context);
+-            if (networkType != ConnectivityManager.TYPE_WIFI) {
++            if ((networkType != ConnectivityManager.TYPE_WIFI) && (networkType != ConnectivityManager.TYPE_ETHERNET)) {
+                 canView = false;
+                 canSave = false;
+                 denyFlags |= DENY_WIFIONLY;
+diff --git a/src/com/android/email/service/AttachmentDownloadService.java b/src/com/android/email/service/AttachmentDownloadService.java
+index 8bd706b..dadb391 100644
+--- a/src/com/android/email/service/AttachmentDownloadService.java
++++ b/src/com/android/email/service/AttachmentDownloadService.java
+@@ -340,8 +340,8 @@ public class AttachmentDownloadService extends Service implements Runnable {
+             EmailConnectivityManager ecm = mConnectivityManager;
+             if (ecm == null) return;
+             if (!ecm.isAutoSyncAllowed()) return;
+-            // Don't prefetch unless we're on a WiFi network
+-            if (ecm.getActiveNetworkType() != ConnectivityManager.TYPE_WIFI) {
++            // Don't prefetch unless we're on a WiFi or Ethernet network
++            if ((ecm.getActiveNetworkType() != ConnectivityManager.TYPE_WIFI) && (ecm.getActiveNetworkType() != ConnectivityManager.TYPE_ETHERNET)) {
+                 return;
+             }
+             // Then, try opportunistic download of appropriate attachments

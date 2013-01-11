@@ -1,0 +1,20 @@
+diff --git a/device.mk b/device.mk
+index d2f4c98..c4a597c 100644
+--- a/device.mk
++++ b/device.mk
+@@ -31,6 +31,7 @@ PRODUCT_COPY_FILES := \
+         device/ti/panda/gpio-keys.kl:system/usr/keylayout/gpio-keys.kl \
+ 	frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
++	frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml
+ 
+ PRODUCT_PACKAGES := \
+@@ -38,6 +39,7 @@ PRODUCT_PACKAGES := \
+ 
+ PRODUCT_PROPERTY_OVERRIDES := \
+ 	wifi.interface=wlan0 \
++	ethernet.interface=eth0 \
+ 	hwui.render_dirty_regions=false
+ 
+ PRODUCT_CHARACTERISTICS := tablet,nosdcard

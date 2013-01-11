@@ -1,0 +1,548 @@
+diff --git a/Android.mk b/Android.mk
+index 1faf6e2..c07a869 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,7 +1,7 @@
+ # Copyright 2006 The Android Open Source Project
+ 
+ # Setting LOCAL_PATH will mess up all-subdir-makefiles, so do it beforehand.
+-legacy_modules := power uevent vibrator wifi qemu qemu_tracing
++legacy_modules := power uevent vibrator wifi ethernet qemu qemu_tracing
+ 
+ SAVE_MAKEFILES := $(call all-named-subdir-makefiles,$(legacy_modules))
+ LEGACY_AUDIO_MAKEFILES := $(call all-named-subdir-makefiles,audio)
+diff --git a/ethernet/Android.mk b/ethernet/Android.mk
+new file mode 100644
+index 0000000..5518239
+--- /dev/null
++++ b/ethernet/Android.mk
+@@ -0,0 +1,15 @@
++# Copyright 2012 The Android Open Source Project
++
++ifdef ETHERNET_DRIVER_MODULE_PATH
++LOCAL_CFLAGS += -DETHERNET_DRIVER_MODULE_PATH=\"$(ETHERNET_DRIVER_MODULE_PATH)\"
++endif
++ifdef ETHERNET_DRIVER_MODULE_ARG
++LOCAL_CFLAGS += -DETHERNET_DRIVER_MODULE_ARG=\"$(ETHERNET_DRIVER_MODULE_ARG)\"
++endif
++ifdef ETHERNET_DRIVER_MODULE_NAME
++LOCAL_CFLAGS += -DETHERNET_DRIVER_MODULE_NAME=\"$(ETHERNET_DRIVER_MODULE_NAME)\"
++endif
++
++LOCAL_SRC_FILES += ethernet/ethernet.c
++
++LOCAL_SHARED_LIBRARIES += libnetutils
+diff --git a/ethernet/ethernet.c b/ethernet/ethernet.c
+new file mode 100644
+index 0000000..2a825e6
+--- /dev/null
++++ b/ethernet/ethernet.c
+@@ -0,0 +1,390 @@
++/*
++ * Copyright 2012, The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <stdlib.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <string.h>
++#include <dirent.h>
++#include <sys/socket.h>
++#include <unistd.h>
++#include <poll.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <inttypes.h>
++#include <asm/types.h>
++#include <linux/netlink.h>
++#include <linux/rtnetlink.h>
++#include <linux/if_ether.h>
++#include <netinet/in.h>
++#include <net/if_arp.h>
++
++#include "hardware_legacy/ethernet.h"
++
++#define LOG_TAG "EthernetHW"
++
++#include "cutils/log.h"
++#include "cutils/memory.h"
++#include "cutils/misc.h"
++#include "cutils/properties.h"
++#include "private/android_filesystem_config.h"
++#ifdef HAVE_LIBC_SYSTEM_PROPERTIES
++#define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
++#include <sys/_system_properties.h>
++#endif
++
++extern int do_dhcp();
++extern int ifc_init();
++extern void ifc_close();
++extern char *dhcp_lasterror();
++extern void get_dhcp_info();
++extern int init_module(void *, unsigned long, const char *);
++extern int delete_module(const char *, unsigned int);
++
++static char primary_iface[PROPERTY_VALUE_MAX];
++static int nl_socket_msg = -1;
++static struct sockaddr_nl addr_msg;
++static int nl_socket_poll = -1;
++static struct sockaddr_nl addr_poll;
++
++#ifndef ETHERNET_DRIVER_MODULE_ARG
++#define ETHERNET_DRIVER_MODULE_ARG          ""
++#endif
++
++#define ETHERNET_DRIVER_LOADER_DELAY	1000000
++
++#ifdef ETHERNET_DRIVER_MODULE_PATH
++static const char DRIVER_MODULE_NAME[]  = ETHERNET_DRIVER_MODULE_NAME;
++static const char DRIVER_MODULE_TAG[]   = ETHERNET_DRIVER_MODULE_NAME " ";
++static const char DRIVER_MODULE_PATH[]  = ETHERNET_DRIVER_MODULE_PATH;
++static const char DRIVER_MODULE_ARG[]   = ETHERNET_DRIVER_MODULE_ARG;
++#endif
++
++static const char DRIVER_PROP_NAME[]    = "lan.driver.status";
++static const char MODULE_FILE[]         = "/proc/modules";
++
++static int insmod(const char *filename, const char *args)
++{
++    void *module;
++    unsigned int size;
++    int ret;
++
++    module = load_file(filename, &size);
++    if (!module)
++        return -1;
++
++    ret = init_module(module, size, args);
++
++    free(module);
++
++    return ret;
++}
++
++static int rmmod(const char *modname)
++{
++    int ret = -1;
++    int maxtry = 10;
++
++    while (maxtry-- > 0) {
++        ret = delete_module(modname, O_NONBLOCK | O_EXCL);
++        if (ret < 0 && errno == EAGAIN)
++            usleep(500000);
++        else
++            break;
++    }
++
++    if (ret != 0)
++        ALOGD("Unable to unload driver module \"%s\": %s\n",
++             modname, strerror(errno));
++    return ret;
++}
++
++int do_ethernet_dhcp_request(int *ipaddr, int *gateway, int *mask,
++                    int *dns1, int *dns2, int *server, int *lease) {
++    char ifc[PROPERTY_VALUE_MAX];
++
++    if (ifc_init() < 0)
++        return -1;
++
++    property_get("ethernet.interface", ifc, NULL);
++
++    if (do_dhcp(ifc) < 0) {
++        ifc_close();
++        return -1;
++    }
++    ifc_close();
++    get_dhcp_info(ipaddr, gateway, mask, dns1, dns2, server, lease);
++    return 0;
++}
++
++const char *get_ethernet_dhcp_error_string() {
++    return dhcp_lasterror();
++}
++
++int is_ethernet_driver_loaded() {
++    char driver_status[PROPERTY_VALUE_MAX];
++#ifdef ETHERNET_DRIVER_MODULE_PATH
++    FILE *proc;
++    char line[sizeof(DRIVER_MODULE_TAG)+10];
++#endif
++
++    if (!property_get(DRIVER_PROP_NAME, driver_status, NULL)
++            || strcmp(driver_status, "ok") != 0) {
++        return 0;  /* driver not loaded */
++    }
++#ifdef ETHERNET_DRIVER_MODULE_PATH
++    /*
++     * If the property says the driver is loaded, check to
++     * make sure that the property setting isn't just left
++     * over from a previous manual shutdown or a runtime
++     * crash.
++     */
++    if ((proc = fopen(MODULE_FILE, "r")) == NULL) {
++        ALOGW("Could not open %s: %s", MODULE_FILE, strerror(errno));
++        property_set(DRIVER_PROP_NAME, "unloaded");
++        return 0;
++    }
++    while ((fgets(line, sizeof(line), proc)) != NULL) {
++        if (strncmp(line, DRIVER_MODULE_TAG, strlen(DRIVER_MODULE_TAG)) == 0) {
++            fclose(proc);
++            return 1;
++        }
++    }
++    fclose(proc);
++    property_set(DRIVER_PROP_NAME, "unloaded");
++    return 0;
++#else
++    return 1;
++#endif
++}
++
++int ethernet_load_driver()
++{
++#ifdef ETHERNET_DRIVER_MODULE_PATH
++    char driver_status[PROPERTY_VALUE_MAX];
++    int count = 100; /* wait at most 20 seconds for completion */
++
++    if (is_ethernet_driver_loaded()) {
++        return 0;
++    }
++
++    if (insmod(DRIVER_MODULE_PATH, DRIVER_MODULE_ARG) < 0)
++        return -1;
++
++    property_set(DRIVER_PROP_NAME, "ok");
++
++    sched_yield();
++    while (count-- > 0) {
++        if (property_get(DRIVER_PROP_NAME, driver_status, NULL)) {
++            if (strcmp(driver_status, "ok") == 0)
++                return 0;
++            else if (strcmp(DRIVER_PROP_NAME, "failed") == 0) {
++                ethernet_unload_driver();
++                return -1;
++            }
++        }
++        usleep(200000);
++    }
++    property_set(DRIVER_PROP_NAME, "timeout");
++    ethernet_unload_driver();
++    return -1;
++#else
++    property_set(DRIVER_PROP_NAME, "ok");
++    return 0;
++#endif
++}
++
++int ethernet_unload_driver()
++{
++    usleep(200000); /* allow to finish interface down */
++#ifdef ETHERNET_DRIVER_MODULE_PATH
++    if (rmmod(DRIVER_MODULE_NAME) == 0) {
++        int count = 20; /* wait at most 10 seconds for completion */
++        while (count-- > 0) {
++            if (!is_ethernet_driver_loaded())
++                break;
++            usleep(500000);
++        }
++        usleep(500000); /* allow card removal */
++        if (count) {
++            return 0;
++        }
++        return -1;
++    } else
++        return -1;
++#else
++    property_set(DRIVER_PROP_NAME, "unloaded");
++    return 0;
++#endif
++}
++
++static int ethernet_get_ifindex (const char *ifname)
++{
++    char path[256];
++    char idx[5] = { 0 };
++    FILE *f;
++
++    snprintf(path, sizeof(path), "/sys/class/net/%s/ifindex", ifname);
++    f = fopen(path, "r");
++    if (!f)
++        return -1;
++
++    if (fgets(idx, 4, f))
++        return strtoimax(idx, NULL, 10);
++
++    return -1;
++}
++
++int ethernet_get_hwaddr(const char *ifname, uint8_t *addr)
++{
++    struct ifreq ifr;
++    int sock = -1;
++
++    sock = socket (AF_INET, SOCK_STREAM, 0);
++    if (sock < 0)
++        return -1;
++
++    memset (&ifr, 0, sizeof (ifr));
++    strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
++
++    if (ioctl (sock, SIOCGIFHWADDR, &ifr))
++        return -1;
++
++    if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER)
++        return -1;
++
++    memcpy (addr, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
++    close (sock);
++
++    return 0;
++}
++
++int ethernet_init_event(void)
++{
++    memset (&addr_msg, '\0', sizeof(addr_msg));
++    addr_msg.nl_family = AF_NETLINK;
++
++    nl_socket_msg = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
++    if (nl_socket_msg <= 0) {
++        ALOGE("Can not create netlink msg socket");
++	return -1;
++    }
++  
++    if (bind(nl_socket_msg, (struct sockaddr *)(&addr_msg),
++	     sizeof(struct sockaddr_nl))) {
++        ALOGE("Can not bind to netlink msg socket");
++	return -1;
++    }
++
++    memset (&addr_poll, '\0', sizeof(addr_poll));
++    addr_poll.nl_family = AF_NETLINK;
++    addr_poll.nl_pid = 0;
++    addr_poll.nl_groups = RTMGRP_LINK | RTMGRP_IPV4_IFADDR;
++
++    nl_socket_poll = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
++    if (nl_socket_poll <= 0) {
++        ALOGE("Can not create netlink poll socket");
++	return -1;
++    }
++
++    if (bind(nl_socket_poll, (struct sockaddr *)(&addr_poll),
++	     sizeof(struct sockaddr_nl))) {
++        ALOGE("Can not bind to netlink poll socket");
++	return -1;
++    }
++
++    return 0;
++}
++
++int ethernet_shutdown_event(void)
++{
++    if (nl_socket_msg > 0)
++        close(nl_socket_msg);
++
++    if (nl_socket_poll > 0)
++        close(nl_socket_poll);
++
++    return 0;
++}
++
++int ethernet_wait_for_event(const char *ifname, char *buf, size_t len)
++{
++    char buff[8192];
++    struct nlmsghdr *nh;
++    struct iovec iov;
++    struct msghdr msg;
++    int if_index = -1, l;
++
++    if_index = ethernet_get_ifindex(ifname);
++    ALOGV("Listening to Netlink event on Ethernet interface index: %s:%d",
++	  ifname, if_index);
++    if (if_index == -1)
++        return -1;
++
++    iov.iov_base = &buff;
++    iov.iov_len = sizeof(buf);
++
++    memset(&msg, '\0', sizeof(msg));
++    msg.msg_name = (void *)&addr_msg;
++    msg.msg_namelen =  sizeof(addr_msg);
++    msg.msg_iov = &iov;
++    msg.msg_iovlen =  1;
++
++    l = recvmsg(nl_socket_poll, &msg, 0);
++    if (l < 0)
++        return -1;
++
++    for (nh = (struct nlmsghdr *) buff; NLMSG_OK (nh, (unsigned int) l);
++	 nh = NLMSG_NEXT (nh, len)) {
++
++        struct ifinfomsg *einfo = (struct ifinfomsg *) NLMSG_DATA(nh);
++	int type;
++
++	if (nh->nlmsg_type == NLMSG_DONE || nh->nlmsg_type == NLMSG_ERROR)
++	    continue;
++
++	/* only consider events from the requested interface */
++	if (einfo->ifi_index != if_index)
++	    continue;
++
++	type = nh->nlmsg_type;
++	if (type == RTM_NEWLINK && (!(einfo->ifi_flags & IFF_LOWER_UP)))
++	    type = RTM_DELLINK;
++
++	switch (type) {
++	case RTM_DELLINK:
++	    strncpy(buf, "PHY_DOWN", len - 1);
++	    buf[len - 1] = '\0';
++	    return strlen(buf);
++	case RTM_NEWLINK:
++	    strncpy(buf, "PHY_UP", len - 1);
++	    buf[len - 1] = '\0';
++	    return strlen(buf);
++	case RTM_DELADDR:
++	    strncpy(buf, "DISCONNECTED", len - 1);
++	    buf[len - 1] = '\0';
++	    return strlen(buf);
++	case RTM_NEWADDR:
++	    strncpy(buf, "CONNECTED", len - 1);
++	    buf[len - 1] = '\0';
++	    return strlen(buf);
++	default:
++	    break;
++	}
++    }
++
++    return 0;
++}
+diff --git a/include/hardware_legacy/ethernet.h b/include/hardware_legacy/ethernet.h
+new file mode 100644
+index 0000000..dc9c26f
+--- /dev/null
++++ b/include/hardware_legacy/ethernet.h
+@@ -0,0 +1,112 @@
++/*
++ * Copyright (C) 2012 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef _ETHERNET_H
++#define _ETHERNET_H
++
++#if __cplusplus
++extern "C" {
++#endif
++
++/**
++ * Load the Ethernet driver.
++ *
++ * @return 0 on success, < 0 on failure.
++ */
++int ethernet_load_driver();
++
++/**
++ * Unload the Ethernet driver.
++ *
++ * @return 0 on success, < 0 on failure.
++ */
++int ethernet_unload_driver();
++
++/**
++ * Check if the Ethernet driver is loaded.
++ *
++ * @return 0 on success, < 0 on failure.
++ */
++int is_ethernet_driver_loaded();
++
++/**
++ * do_dhcp_request() issues a dhcp request and returns the acquired
++ * information. 
++ * 
++ * All IPV4 addresses/mask are in network byte order.
++ *
++ * @param ipaddr return the assigned IPV4 address
++ * @param gateway return the gateway being used
++ * @param mask return the IPV4 mask
++ * @param dns1 return the IPV4 address of a DNS server
++ * @param dns2 return the IPV4 address of a DNS server
++ * @param server return the IPV4 address of DHCP server
++ * @param lease return the length of lease in seconds.
++ *
++ * @return 0 if successful, < 0 if error.
++ */
++int do_ethernet_dhcp_request(int *ipaddr, int *gateway, int *mask,
++			     int *dns1, int *dns2, int *server, int *lease);
++
++/**
++ * Return the error string of the last do_dhcp_request().
++ */
++const char *get_ethernet_dhcp_error_string();
++
++/**
++ * ethernet_get_hwaddr() returns interface MAC address.
++ *
++ * @param iface is the requested interface
++ * @param addr is the address byte array
++ *
++ * @return 0 if successful, < 0 if error.
++ */
++int ethernet_get_hwaddr(const char *ifname, uint8_t *addr);
++
++/**
++ * ethernet_init_event() initializes the Netlink eventing channel.
++ *
++ * @return 0 if successful, < 0 if error.
++ */
++int ethernet_init_event(void);
++
++/**
++ * ethernet_shudown_event() shutdowns the Netlink eventing channel.
++ *
++ * @return 0 if successful, < 0 if error.
++ */
++int ethernet_shutdown_event(void);
++
++/**
++ * ethernet_wait_for_event() performs a blocking call to 
++ * get an Ethernet event and returns a string representing 
++ * a Ethernet event when it occurs.
++ *
++ * @param iface is the interface on which event is received
++ * @param buf is the buffer that receives the event
++ * @param len is the maximum length of the buffer
++ *
++ * @returns number of bytes in buffer, 0 if no
++ * event (for instance, no connection), and less than 0
++ * if there is an error.
++ */
++int ethernet_wait_for_event(const char *ifname, char *buf, size_t len);
++
++#if __cplusplus
++};  // extern "C"
++#endif
++
++#endif  // _ETHERNET_H

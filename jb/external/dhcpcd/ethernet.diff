@@ -1,0 +1,12 @@
+diff --git a/dhcpcd-hooks/20-dns.conf b/dhcpcd-hooks/20-dns.conf
+index 6165824..5fb4c0a 100644
+--- a/dhcpcd-hooks/20-dns.conf
++++ b/dhcpcd-hooks/20-dns.conf
+@@ -22,6 +22,7 @@ set_dns_props()
+     count=1
+     for dnsaddr in ${new_domain_name_servers}; do
+         setprop dhcp.${intf}.dns${count} ${dnsaddr}
++	setprop net.dns${count} ${dnsaddr}
+         count=$(($count + 1))
+     done
+ }

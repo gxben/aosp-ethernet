@@ -1,0 +1,41 @@
+diff --git a/cmds/monkey/src/com/android/commands/monkey/MonkeyNetworkMonitor.java b/cmds/monkey/src/com/android/commands/monkey/MonkeyNetworkMonitor.java
+index 191bb59..32187d8 100644
+--- a/cmds/monkey/src/com/android/commands/monkey/MonkeyNetworkMonitor.java
++++ b/cmds/monkey/src/com/android/commands/monkey/MonkeyNetworkMonitor.java
+@@ -37,6 +37,7 @@ public class MonkeyNetworkMonitor extends IIntentReceiver.Stub {
+     private long mEventTime; // time of last event (connect, disconnect, etc.)
+     private int mLastNetworkType = -1; // unknown
+     private long mWifiElapsedTime = 0;  // accumulated time spent on wifi since start()
++    private long mEthernetElapsedTime = 0;   // accumulated time spent on ethernet since start()
+     private long mMobileElapsedTime = 0; // accumulated time spent on mobile since start()
+     private long mElapsedTime = 0; // amount of time spent between start() and stop()
+     
+@@ -69,6 +70,10 @@ public class MonkeyNetworkMonitor extends IIntentReceiver.Stub {
+                 if (LDEBUG) System.out.println("Adding to wifi: " + delta);
+                 mWifiElapsedTime += delta;
+                 break;
++            case ConnectivityManager.TYPE_ETHERNET:
++                if (LDEBUG) System.out.println("Adding to ethernet: " + delta);
++                mEthernetElapsedTime += delta;
++                break;
+             default:
+                 if (LDEBUG) System.out.println("Unaccounted for: " + delta);
+                 break;
+@@ -78,6 +83,7 @@ public class MonkeyNetworkMonitor extends IIntentReceiver.Stub {
+ 
+     public void start() {
+         mWifiElapsedTime = 0;
++        mEthernetElapsedTime = 0;
+         mMobileElapsedTime = 0;
+         mElapsedTime = 0;
+         mEventTime = mCollectionStartTime = SystemClock.elapsedRealtime();
+@@ -101,6 +107,7 @@ public class MonkeyNetworkMonitor extends IIntentReceiver.Stub {
+         System.out.println("## Network stats: elapsed time=" + mElapsedTime + "ms (" 
+                 + mMobileElapsedTime + "ms mobile, "
+                 + mWifiElapsedTime + "ms wifi, "
+-                + (mElapsedTime - mMobileElapsedTime - mWifiElapsedTime) + "ms not connected)");
++                + mEthernetElapsedTime + "ms ethernet, "
++                + (mElapsedTime - mMobileElapsedTime - mWifiElapsedTime - mEthernetElapsedTime) + "ms not connected)");
+     }
+  }
+\ No newline at end of file

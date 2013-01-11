@@ -1,0 +1,53 @@
+diff --git a/init/property_service.c b/init/property_service.c
+index f58e07d..0941f0c 100755
+--- a/init/property_service.c
++++ b/init/property_service.c
+@@ -78,12 +78,14 @@ struct {
+     { "dev.",             AID_SYSTEM,   0 },
+     { "runtime.",         AID_SYSTEM,   0 },
+     { "hw.",              AID_SYSTEM,   0 },
++    { "rw.",              AID_SYSTEM,   0 },
+     { "sys.",             AID_SYSTEM,   0 },
+     { "service.",         AID_SYSTEM,   0 },
+     { "wlan.",            AID_SYSTEM,   0 },
+     { "bluetooth.",       AID_BLUETOOTH,   0 },
+     { "dhcp.",            AID_SYSTEM,   0 },
+     { "dhcp.",            AID_DHCP,     0 },
++    { "net.",             AID_DHCP,     0 },
+     { "debug.",           AID_SYSTEM,   0 },
+     { "debug.",           AID_SHELL,    0 },
+     { "log.",             AID_SHELL,    0 },
+diff --git a/logcat/event.logtags b/logcat/event.logtags
+index 6040bd9..3fc96f8 100644
+--- a/logcat/event.logtags
++++ b/logcat/event.logtags
+@@ -90,6 +90,16 @@
+ # Logged when the supplicant switches to a new state
+ 50023 wifi_supplicant_state_changed (supplicant_state|1|5)
+ 
++# HSM ethernet state change
++# Hierarchical state class name (as defined in EthernetStateTracker.java)
++# Logged on every state change in the hierarchical state machine
++50031 ethernet_state_changed (ethernet_state|3)
++# HSM ethernet event
++# [31-16] Reserved for future use
++# [15 - 0] HSM event (as defined in EthernetStateTracker.java)
++# Logged when an event is handled in a hierarchical state
++50032 ethernet_event_handled (ethernet_event|1|5)
++
+ # Do not change these names without updating tag in:
+ #//device/dalvik/libcore/luni/src/main/native/org_apache_harmony_luni_platform_OSNetworkSystem.c
+ 51000 socket_stats (send|1|2),(recv|1|2),(ip|1|5),(port|1|5),(close|1|5)
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index caef358..1db1713 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -328,6 +328,7 @@ on boot
+ # Define TCP buffer sizes for various networks
+ #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
+     setprop net.tcp.buffersize.default 4096,87380,110208,4096,16384,110208
++    setprop net.tcp.buffersize.ethernet 524288,1048576,2097152,262144,524288,1048576
+     setprop net.tcp.buffersize.wifi    524288,1048576,2097152,262144,524288,1048576
+     setprop net.tcp.buffersize.lte     524288,1048576,2097152,262144,524288,1048576
+     setprop net.tcp.buffersize.umts    4094,87380,110208,4096,16384,110208
+
