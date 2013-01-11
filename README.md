@@ -4,7 +4,7 @@ aosp-ethernet
 This repository is a collection of patches to Google's AOSP tree
 that provide Ethernet support to Android.
 
-The original support is based on the zork from Android-x86 project
+The original support is based on the fork from Android-x86 project
 (see ethernet.diff.tar.gz from http://www.android-x86.org/download page).
 
 The goal of the patchset is to provide a complete Ethernet support to
